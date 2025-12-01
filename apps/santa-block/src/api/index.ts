@@ -6,6 +6,7 @@ import { logger } from '../utils/logger';
 import healthRoutes from './routes/health';
 import statsRoutes from './routes/stats';
 import proofsRoutes from './routes/proofs';
+import revealsRoutes from './routes/reveals';
 import adminRoutes from './routes/admin';
 import transactionsRoutes from './routes/transactions';
 import schedulerRoutes from './routes/scheduler';
@@ -122,6 +123,7 @@ export function createApp(): Application {
   app.use('/health', healthRoutes);
   app.use('/stats', statsRoutes);
   app.use('/proofs', strictLimiter, proofsRoutes); // Stricter limits on individual proofs, but not /all/gifts
+  app.use('/reveals', revealsRoutes); // Daily reveal data
   app.use('/admin', adminRoutes);
   app.use('/transactions', transactionsRoutes);
   app.use('/scheduler', schedulerRoutes);
@@ -137,6 +139,7 @@ export function createApp(): Application {
         health: '/health',
         stats: '/stats',
         proofs: '/proofs',
+        reveals: '/reveals',
         admin: '/admin (requires auth)',
         transactions: '/transactions',
         scheduler: '/scheduler',

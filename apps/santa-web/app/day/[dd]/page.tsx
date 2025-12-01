@@ -36,10 +36,11 @@ export default async function DayPage({ params }: PageProps) {
   const proof = await getProof(paddedDay)
   const giftInfo = await getGiftByDay(day)
   
-  // Fetch reveal data from API - this determines what we can show
+  // Fetch reveal data from backend API - this determines what we can show
   let revealData = null
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reveals/day-${paddedDay}`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const response = await fetch(`${apiUrl}/reveals/day-${paddedDay}`, {
       cache: 'no-store'
     })
     if (response.ok) {
