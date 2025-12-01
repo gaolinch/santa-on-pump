@@ -51,6 +51,16 @@ export default function Footer() {
                   X (Twitter)
                 </a>
               </li>
+              <li>
+                <a
+                  href="https://github.com/gaolinch/santa-on-pump"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 dark:text-gray-400 hover:text-festive-green-600 dark:hover:text-festive-green-400"
+                >
+                  GitHub
+                </a>
+              </li>
             </ul>
           </div>
         </div>
