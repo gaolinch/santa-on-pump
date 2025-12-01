@@ -127,7 +127,7 @@ Verification:
 | **Launcher** | Pump.fun |
 | **Name** | Santa |
 | **Symbol** | $SANTA |
-| **Contract Address** | AjckotsSBsw19EG47nz2Kav9DwkVU1A22Vabm6wRpump |
+| **Contract Address** | Fx43TUh41c3g5HHn1swpdoFFPYBZHnQMH2zKHeA7pump |
 | **Network** | Solana (SPL standard) |
 | **Total Supply** | 1 000 000 000 SANTA |
 | **Decimals** | 9 |
