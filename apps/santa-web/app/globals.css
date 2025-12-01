@@ -1,0 +1,494 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+  }
+
+  body {
+    @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    background-image: 
+      /* Snow glows */
+      radial-gradient(circle at 10% 20%, rgba(34, 197, 94, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 90% 10%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 50% 90%, rgba(34, 197, 94, 0.11) 0%, transparent 50%),
+      radial-gradient(circle at 80% 60%, rgba(34, 197, 94, 0.09) 0%, transparent 50%),
+      radial-gradient(circle at 20% 70%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 70% 30%, rgba(34, 197, 94, 0.09) 0%, transparent 50%),
+      radial-gradient(circle at 30% 80%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 60% 15%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 15% 45%, rgba(34, 197, 94, 0.09) 0%, transparent 50%);
+    opacity: 0.5;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Floating background icons */
+.floating-icons {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.floating-icon {
+  position: absolute;
+  opacity: 0.15;
+  animation: float 20s infinite ease-in-out;
+}
+
+.floating-icon.fast {
+  animation-duration: 15s;
+}
+
+.floating-icon.slow {
+  animation-duration: 25s;
+}
+
+.floating-icon:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
+.floating-icon:nth-child(2) { top: 20%; left: 80%; animation-delay: -5s; }
+.floating-icon:nth-child(3) { top: 40%; left: 15%; animation-delay: -10s; }
+.floating-icon:nth-child(4) { top: 60%; left: 75%; animation-delay: -15s; }
+.floating-icon:nth-child(5) { top: 80%; left: 20%; animation-delay: -3s; }
+.floating-icon:nth-child(6) { top: 15%; left: 50%; animation-delay: -8s; }
+.floating-icon:nth-child(7) { top: 70%; left: 60%; animation-delay: -12s; }
+.floating-icon:nth-child(8) { top: 35%; left: 85%; animation-delay: -7s; }
+.floating-icon:nth-child(9) { top: 55%; left: 40%; animation-delay: -18s; }
+.floating-icon:nth-child(10) { top: 25%; left: 30%; animation-delay: -4s; }
+/* Dollar signs and crypto - prominent positions */
+.floating-icon:nth-child(11) { top: 18%; left: 65%; animation-delay: -6s; }
+.floating-icon:nth-child(12) { top: 48%; left: 85%; animation-delay: -11s; }
+.floating-icon:nth-child(13) { top: 35%; left: 25%; animation-delay: -9s; }
+.floating-icon:nth-child(14) { top: 62%; left: 50%; animation-delay: -14s; }
+.floating-icon:nth-child(15) { top: 50%; left: 10%; animation-delay: -2s; }
+.floating-icon:nth-child(16) { top: 72%; left: 88%; animation-delay: -16s; }
+.floating-icon:nth-child(17) { top: 85%; left: 35%; animation-delay: -13s; }
+.floating-icon:nth-child(18) { top: 8%; left: 40%; animation-delay: -20s; }
+.floating-icon:nth-child(19) { top: 42%; left: 55%; animation-delay: -17s; }
+.floating-icon:nth-child(20) { top: 78%; left: 15%; animation-delay: -8s; }
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-40px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-20px) rotate(-5deg);
+  }
+}
+
+/* Particles container */
+.particles-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Particles - snow effect */
+.particle {
+  position: absolute;
+  bottom: -20px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.7);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  pointer-events: none;
+  animation-name: particle-float;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  -webkit-animation-name: particle-float;
+  -webkit-animation-timing-function: linear;
+  -webkit-animation-iteration-count: infinite;
+}
+
+.particle:nth-child(odd) {
+  animation-duration: 20s;
+  -webkit-animation-duration: 20s;
+}
+
+.particle:nth-child(3n) {
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(0) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+    transform: translateY(-10vh) scale(1);
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-100vh) scale(1);
+    opacity: 0;
+  }
+}
+
+@-webkit-keyframes particle-float {
+  0% {
+    -webkit-transform: translateY(0) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+    -webkit-transform: translateY(-10vh) scale(1);
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    -webkit-transform: translateY(-100vh) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Content positioning */
+main {
+  position: relative;
+  z-index: 1;
+}
+
+/* Laser Scan Effect for Santa Title */
+.laser-text {
+  position: relative;
+  display: inline-block;
+}
+
+.laser-text::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(34, 197, 94, 0.8),
+    rgba(34, 197, 94, 1),
+    rgba(34, 197, 94, 0.8),
+    transparent
+  );
+  animation: laser-scan 10s ease-in-out infinite;
+  box-shadow: 
+    0 0 10px rgba(34, 197, 94, 0.8),
+    0 0 20px rgba(34, 197, 94, 0.6),
+    0 0 30px rgba(34, 197, 94, 0.4);
+  z-index: 2;
+}
+
+.laser-text::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(34, 197, 94, 0.1) 30%,
+    rgba(34, 197, 94, 0.2) 50%,
+    rgba(34, 197, 94, 0.1) 70%,
+    transparent 100%
+  );
+  animation: laser-glow 10s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes laser-scan {
+  /* Scan down: 0-15% */
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  15% {
+    top: 100%;
+    opacity: 1;
+  }
+  
+  /* Scan up: 15-30% */
+  16% {
+    top: 100%;
+    opacity: 1;
+  }
+  30% {
+    top: 0;
+    opacity: 1;
+  }
+  32% {
+    opacity: 0;
+  }
+  
+  /* Pause until 100% */
+  100% {
+    top: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes laser-glow {
+  /* Glow during down scan */
+  0% {
+    opacity: 0.3;
+  }
+  8% {
+    opacity: 0.8;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  
+  /* Glow during up scan */
+  23% {
+    opacity: 0.8;
+  }
+  30% {
+    opacity: 0.3;
+  }
+  
+  /* Pause */
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* Neon glow effect - synced with laser scan */
+.neon-text {
+  animation: neon-pulse 10s ease-in-out infinite;
+}
+
+@keyframes neon-pulse {
+  /* Minimal glow at start */
+  0% {
+    text-shadow: 
+      0 0 2px rgba(34, 197, 94, 0.3);
+  }
+  
+  /* Glow up during down scan */
+  2%, 15% {
+    text-shadow: 
+      0 0 10px rgba(34, 197, 94, 0.9),
+      0 0 20px rgba(34, 197, 94, 0.7),
+      0 0 30px rgba(34, 197, 94, 0.5),
+      0 0 40px rgba(34, 197, 94, 0.3);
+  }
+  
+  /* Keep glow during up scan */
+  16%, 30% {
+    text-shadow: 
+      0 0 10px rgba(34, 197, 94, 0.9),
+      0 0 20px rgba(34, 197, 94, 0.7),
+      0 0 30px rgba(34, 197, 94, 0.5),
+      0 0 40px rgba(34, 197, 94, 0.3);
+  }
+  
+  /* Fade back to minimal */
+  32% {
+    text-shadow: 
+      0 0 2px rgba(34, 197, 94, 0.3);
+  }
+  
+  /* Stay minimal during pause */
+  100% {
+    text-shadow: 
+      0 0 2px rgba(34, 197, 94, 0.3);
+  }
+}
+
+/* Logo Flip Animation - Coin Effect */
+.logo-flip-container {
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.logo-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.logo-flip-container:hover .logo-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.logo-flip-front,
+.logo-flip-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.logo-flip-front {
+  z-index: 2;
+}
+
+.logo-flip-back {
+  transform: rotateY(180deg);
+}
+
+/* Coin Design - Realistic Coin Back */
+.coin-back {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Dark grey background matching countdown flip cards */
+  background: rgba(31, 41, 55, 0.8);
+  
+  /* Green border */
+  border: 2px solid #16a34a;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(22, 163, 74, 0.2);
+}
+
+.coin-back::before {
+  content: '';
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  border: 1px solid rgba(22, 163, 74, 0.3);
+  pointer-events: none;
+}
+
+.coin-back::after {
+  content: '';
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  pointer-events: none;
+}
+
+.coin-inner-circle {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.coin-text {
+  color: #16a34a;
+  font-weight: bold;
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  transform: rotate(-20deg);
+  text-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.coin-text-large {
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+/* Larger coin for homepage */
+.coin-back-large {
+  border: 3px solid #16a34a;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(22, 163, 74, 0.3);
+}
+
+/* Countdown Flip Animation */
+.countdown-flip-container {
+  perspective: 1000px;
+  cursor: pointer;
+  min-height: 100px;
+}
+
+.countdown-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100px;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.countdown-flip-container:hover .countdown-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.countdown-flip-front,
+.countdown-flip-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  min-height: 100px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.countdown-flip-front {
+  z-index: 2;
+}
+
+.countdown-flip-back {
+  transform: rotateY(180deg);
+}
+

@@ -1,0 +1,146 @@
+#!/usr/bin/env node
+/**
+ * ⚠️ DEPRECATED - DO NOT USE THIS SCRIPT ⚠️
+ * 
+ * This script adds hash fields to gift objects, which breaks Merkle verification.
+ * The hash functions now exclude the hash field to avoid circular dependencies.
+ * 
+ * Use generate-merkle.js instead, which generates the Merkle tree without adding
+ * hash fields to gift objects.
+ * 
+ * ---
+ * 
+ * OLD DESCRIPTION:
+ * Populate gift hash fields with their leaf hashes
+ * This updates the gift objects with their corresponding leaf hashes from the Merkle tree
+ */
+
+console.error('⚠️  ERROR: This script is DEPRECATED and should not be used!');
+console.error('');
+console.error('The hash field in gift objects causes Merkle verification to fail.');
+console.error('Use "node src/scripts/generate-merkle.js" instead.');
+console.error('');
+process.exit(1);
+
+const fs = require('fs');
+const path = require('path');
+
+async function populateGiftHashes() {
+  console.log('🔄 Populating gift hash fields with leaf hashes...\n');
+
+  // 1. Load private Merkle data
+  const privatePath = path.join(__dirname, 'data/private-merkle-data.json');
+  if (!fs.existsSync(privatePath)) {
+    console.error('❌ Error: private-merkle-data.json not found');
+    console.error('   Run "node generate-merkle.js" first to generate the Merkle tree');
+    process.exit(1);
+  }
+
+  const privateData = JSON.parse(fs.readFileSync(privatePath, 'utf8'));
+  console.log(`✓ Loaded private Merkle data (${privateData.gifts.length} gifts)`);
+
+  // 2. Update each gift with its leaf hash
+  let updatedCount = 0;
+  for (let i = 0; i < privateData.gifts.length; i++) {
+    const gift = privateData.gifts[i];
+    const leafHash = privateData.leaves[i];
+    
+    if (gift.hash !== leafHash) {
+      gift.hash = leafHash;
+      updatedCount++;
+    }
+  }
+
+  console.log(`✓ Updated ${updatedCount} gift hashes\n`);
+
+  // 3. Save updated private data
+  fs.writeFileSync(privatePath, JSON.stringify(privateData, null, 2));
+  console.log(`✓ Saved updated private data to: ${privatePath}`);
+
+  // 4. Also update the reveal files
+  console.log('\n🔄 Updating reveal files...');
+  const revealsDir = path.join(__dirname, 'data/reveals');
+  
+  for (let day = 1; day <= 24; day++) {
+    const revealPath = path.join(revealsDir, `day-${String(day).padStart(2, '0')}.json`);
+    
+    if (fs.existsSync(revealPath)) {
+      const reveal = JSON.parse(fs.readFileSync(revealPath, 'utf8'));
+      
+      // Update the gift.hash field in the reveal
+      if (reveal.gift && reveal.leaf) {
+        reveal.gift.hash = reveal.leaf;
+        fs.writeFileSync(revealPath, JSON.stringify(reveal, null, 2));
+      }
+    }
+  }
+  console.log('✓ Updated all reveal files\n');
+
+  // 5. Update gifts-full.json (source file)
+  const giftsFullPath = path.join(__dirname, 'data/gifts-full.json');
+  if (fs.existsSync(giftsFullPath)) {
+    const giftsData = JSON.parse(fs.readFileSync(giftsFullPath, 'utf8'));
+    
+    // Match gifts by day and update their hashes
+    for (const gift of giftsData.gifts) {
+      const matchingPrivateGift = privateData.gifts.find(g => g.day === gift.day);
+      if (matchingPrivateGift) {
+        gift.hash = matchingPrivateGift.hash;
+      }
+    }
+    
+    fs.writeFileSync(giftsFullPath, JSON.stringify(giftsData, null, 2));
+    console.log(`✓ Updated gifts-full.json`);
+  }
+
+  // 6. Update frontend gifts-data.json
+  const frontendGiftsPath = path.join(__dirname, '../santa-web/lib/gifts-data.json');
+  if (fs.existsSync(frontendGiftsPath)) {
+    const frontendGifts = JSON.parse(fs.readFileSync(frontendGiftsPath, 'utf8'));
+    
+    // Match gifts by day and update their hashes
+    for (const gift of frontendGifts.gifts) {
+      const matchingPrivateGift = privateData.gifts.find(g => g.day === gift.day);
+      if (matchingPrivateGift) {
+        gift.hash = matchingPrivateGift.hash;
+      }
+    }
+    
+    fs.writeFileSync(frontendGiftsPath, JSON.stringify(frontendGifts, null, 2));
+    console.log(`✓ Updated frontend gifts-data.json\n`);
+  }
+
+  // 7. Summary
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log('✅ Gift hashes populated successfully!');
+  console.log('═══════════════════════════════════════════════════════════\n');
+  
+  console.log('Updated files:');
+  console.log('  ✓ private-merkle-data.json');
+  console.log('  ✓ gifts-full.json');
+  console.log('  ✓ gifts-data.json (frontend)');
+  console.log('  ✓ All 24 reveal files\n');
+  
+  console.log('Example gift with hash:');
+  const sampleGift = privateData.gifts[0];
+  console.log(JSON.stringify({
+    day: sampleGift.day,
+    type: sampleGift.type,
+    hash: sampleGift.hash,
+    notes: sampleGift.notes
+  }, null, 2));
+  console.log('\n');
+}
+
+// Run the script
+populateGiftHashes()
+  .then(() => {
+    console.log('✨ Done!\n');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('❌ Error:', error.message);
+    console.error(error.stack);
+    process.exit(1);
+  });
+

@@ -1,0 +1,16 @@
+node_modules
+dist
+.env
+.env.local
+*.log
+coverage
+.git
+.gitignore
+README.md
+docker-compose.yml
+Dockerfile
+.DS_Store
+data/gifts-full.json
+*.key
+*.pem
+

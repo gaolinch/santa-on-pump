@@ -1,0 +1,14 @@
+.prose h1,
+.prose h2,
+.prose h3 {
+  scroll-margin-top: 6rem;
+}
+
+.prose a {
+  text-decoration: underline;
+}
+
+.prose img {
+  border-radius: 1rem;
+}
+

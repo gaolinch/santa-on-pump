@@ -1,0 +1,64 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+**/dist
+.turbo
+**/.turbo
+
+# Development files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Tests
+**/*.test.ts
+**/*.spec.ts
+**/__tests__
+
+# Environment files (will be passed via docker-compose)
+.env
+.env.*
+!.env.example
+
+# Next.js (for santa-web)
+apps/santa-web/.next
+apps/santa-web/out
+apps/santa-web/build
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Data directories
+data
+**/data
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+
