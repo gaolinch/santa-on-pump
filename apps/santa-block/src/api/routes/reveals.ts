@@ -7,6 +7,20 @@ import { giftSpecRepo } from '../../database';
 
 const router = Router();
 
+// Load private merkle data (contains salts and proofs for all days)
+let privateMerkleData: any = null;
+try {
+  const privateMerklePath = path.join(__dirname, '../../../data/private-merkle-data.json');
+  if (fs.existsSync(privateMerklePath)) {
+    privateMerkleData = JSON.parse(fs.readFileSync(privateMerklePath, 'utf8'));
+    logger.info('Loaded private merkle data for reveals');
+  } else {
+    logger.warn({ path: privateMerklePath }, 'Private merkle data file not found');
+  }
+} catch (error) {
+  logger.error({ error }, 'Failed to load private merkle data');
+}
+
 /**
  * GET /reveals/day-01, /reveals/day-02, etc.
  * Serve daily reveal data with proper timing controls
@@ -57,36 +71,20 @@ router.get('/day-:day', async (req: Request, res: Response) => {
       });
     }
 
-    // Load the reveal file from the data directory
-    const revealsDir = path.join(__dirname, '../../../data/reveals');
-    const revealPath = path.join(revealsDir, `day-${dayParam}.json`);
-
-    if (!fs.existsSync(revealPath)) {
-      logger.warn({ day: dayNumber, path: revealPath }, 'Reveal file not found');
+    // Fetch gift spec from database
+    const giftSpec = await giftSpecRepo.findByDay(dayNumber);
+    
+    if (!giftSpec) {
+      logger.warn({ day: dayNumber }, 'Gift spec not found in database');
       return res.status(404).json({
-        error: 'Reveal data not found'
+        error: 'Gift data not found'
       });
     }
 
-    const revealData = JSON.parse(fs.readFileSync(revealPath, 'utf8'));
-
     // If in hint phase, return only limited data
     if (isHintPhase && !ALLOW_FUTURE_REVEALS) {
-      // Fetch hint from database
-      let hint = 'Mystery Gift';
-      let sub_hint = 'Full details revealed tomorrow';
-      
-      try {
-        const giftSpec = await giftSpecRepo.findByDay(dayNumber);
-        if (giftSpec?.hint) {
-          hint = giftSpec.hint;
-        }
-        if (giftSpec?.sub_hint) {
-          sub_hint = giftSpec.sub_hint;
-        }
-      } catch (error) {
-        logger.error({ error, day: dayNumber }, 'Failed to fetch hint from database');
-      }
+      const hint = giftSpec.hint || 'Mystery Gift';
+      const sub_hint = giftSpec.sub_hint || 'Full details revealed tomorrow';
       
       return res.json({
         day: dayNumber,
@@ -94,6 +92,31 @@ router.get('/day-:day', async (req: Request, res: Response) => {
         sub_hint: sub_hint,
         hint_only: true
       });
+    }
+
+    // Full reveal: Build complete reveal data from database + merkle data
+    const revealData: any = {
+      day: dayNumber,
+      gift: {
+        day: dayNumber,
+        type: giftSpec.type,
+        params: giftSpec.params,
+        distribution_source: giftSpec.distribution_source || 'treasury_daily_fees',
+        notes: giftSpec.notes
+      }
+    };
+
+    // Add Merkle proof data if available
+    if (privateMerkleData && privateMerkleData.days) {
+      const dayData = privateMerkleData.days.find((d: any) => d.day === dayNumber);
+      if (dayData) {
+        revealData.salt = dayData.salt;
+        revealData.leaf = dayData.leaf;
+        revealData.proof = dayData.proof;
+        revealData.root = privateMerkleData.root;
+      } else {
+        logger.warn({ day: dayNumber }, 'Merkle proof data not found for day');
+      }
     }
 
     // Return the full reveal data
