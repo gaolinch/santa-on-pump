@@ -29,14 +29,6 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <Link
-                  href="/calendar"
-                  className="text-gray-600 dark:text-gray-400 hover:text-festive-green-600 dark:hover:text-festive-green-400"
-                >
-                  Calendar
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/whitepaper"
                   className="text-gray-600 dark:text-gray-400 hover:text-festive-green-600 dark:hover:text-festive-green-400"
                 >
