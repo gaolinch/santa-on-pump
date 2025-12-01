@@ -21,7 +21,6 @@ async function diagnosticCheck() {
     console.log(`RPC Devnet:       ${config.solana.rpcDevnet?.substring(0, 50)}...`);
     console.log(`Token Mint:       ${config.santa.tokenMint || '❌ NOT SET'}`);
     console.log(`Treasury Wallet:  ${config.santa.treasuryWallet || '❌ NOT SET'}`);
-    console.log(`Fee Percent:      ${config.santa.feePercent}%`);
     console.log();
 
     // 2. Check Monitoring Mode

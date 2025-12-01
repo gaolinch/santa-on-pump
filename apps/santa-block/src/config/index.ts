@@ -74,7 +74,6 @@ export const config = {
     treasuryWallet: process.env.SANTA_TREASURY_WALLET || '',
     decimals: parseInt(process.env.SANTA_DECIMALS || '9', 10),
     totalSupply: 1_000_000_000,
-    feePercent: 3,
   },
 
   multisig: {
@@ -128,13 +127,6 @@ export const config = {
 
   schedule: {
     dailyCloseCron: process.env.DAILY_CLOSE_CRON || '5 0 * * *', // 00:05 UTC
-  },
-
-  // Distribution allocation percentages
-  allocation: {
-    holders: 40,
-    ngos: 40,
-    founders: 20,
   },
 };
 

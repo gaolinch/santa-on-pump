@@ -104,14 +104,6 @@ export const SANTA_SEASON_START = '2025-12-01';
 export const SANTA_SEASON_END = '2025-12-24';
 export const ADVENT_DAYS = 24;
 
-export const ALLOCATION = {
-  HOLDERS: 40,
-  NGOS: 40,
-  FOUNDERS: 20,
-} as const;
-
-export const FEE_PERCENT = 3;
-
 // Utility Types
 export type AdventDay = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24;
 

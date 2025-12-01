@@ -276,25 +276,21 @@ async function showTransactionDetails(signature?: string) {
     if (dbTx && blockchainTx) {
       const transfer = solanaService.parseTokenTransfer(blockchainTx, txSignature);
       if (transfer) {
-        // Get fee percentage from config
-        const { config } = await import('../config/index.js');
-        const feePercent = config.santa.feePercent || 1;
-        
-        const expectedProtocolFee = (transfer.amount * BigInt(feePercent)) / BigInt(100);
+        // Protocol fee is extracted from transaction data, not calculated
         const actualProtocolFee = BigInt(dbTx.fee || 0n);
-        const protocolFeeMatch = expectedProtocolFee.toString() === actualProtocolFee.toString();
+        const actualCreatorFee = BigInt(dbTx.creator_fee || 0n);
         
         const expectedNetworkFee = blockchainTx.meta?.fee || 0;
         const actualNetworkFee = Number(dbTx.network_fee || 0n);
         const networkFeeMatch = expectedNetworkFee === actualNetworkFee;
         
-        console.log(`  Fee Percentage:       ${feePercent}%`);
         console.log(`  Transaction Amount:   ${formatNumber(transfer.amount)} tokens`);
         console.log('');
-        console.log(`  Protocol Fee:`);
-        console.log(`    Expected:           ${formatNumber(expectedProtocolFee)} tokens`);
+        console.log(`  Protocol Fee (from transaction):`);
         console.log(`    Stored in DB:       ${formatNumber(actualProtocolFee)} tokens`);
-        console.log(`    Match:              ${protocolFeeMatch ? '✅ YES' : '❌ NO'}`);
+        if (actualCreatorFee > 0n) {
+          console.log(`    Creator Fee:        ${formatNumber(actualCreatorFee)} tokens`);
+        }
         console.log('');
         console.log(`  Network Fee:`);
         console.log(`    Expected (RPC):     ${formatLamports(expectedNetworkFee)}`);
