@@ -48,7 +48,7 @@ export default function Countdown({ targetDate }: CountdownProps) {
 
   // Only show "PUMP!" after component has mounted and time is actually 0
   if (mounted && timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0) {
-    const SANTA_CA = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+    const SANTA_CA = 'Fx43TUh41c3g5HHn1swpdoFFPYBZHnQMH2zKHeA7pump'
     
     return (
       <div className="text-center space-y-4">
