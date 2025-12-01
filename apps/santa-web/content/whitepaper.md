@@ -134,7 +134,7 @@ Verification:
 | **Launch Date** | 1 December 2025 |
 | **Season Duration** | December 1-24 (24 days) |
 | **Transaction Fee** | ≈ Pump.fun creator fees |
-| **Allocation** | Holders 70 % / NGOs 25 % / Founders 5 % |
+| **Fees and rewards Allocation** | Holders 70 % / NGOs 25 % / Founders 5 % |
 | **Airdrop Reserve** | 5% of market cap secured by founders for community airdrops |
 
 **Founders' Commitment:** The founding team has secured **5% of the market cap** to distribute as airdrops throughout the 24-day event. These tokens are used for bonus rewards, hourly random drops, and special event airdrops — ensuring continuous community engagement and rewards beyond the daily fee distributions.
@@ -214,5 +214,5 @@ Just 24 days of rewards, chaos, charity, and community.
 **Merkle Root Commitment (Season 2025):**  
 `b1d22ed5c20ad74da7bce68251264b9b055ab27d22f5e3b223614c80e56d5793`
 
-**Published:** November 27, 2025  
+**Published:** November 27, 2025
 **Verification:** https://santa-pump.fun/verify
