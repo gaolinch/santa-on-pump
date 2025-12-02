@@ -172,7 +172,7 @@ export class TwitterService {
         return null;
       }
 
-      const data = await response.json();
+      const data = await response.json() as { data?: { id?: string } };
       const tweetId = data.data?.id;
       
       logger.info({ tweetId }, '✅ Tweet posted successfully');

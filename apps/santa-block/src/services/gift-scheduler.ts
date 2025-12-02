@@ -250,8 +250,9 @@ export class GiftScheduler {
           ? dayPool.fees_in 
           : BigInt(String(dayPool.fees_in));
       
-      // Apply daily fee cap (5000 SOL default)
-      const dailyFeeLimit = config.gifts.dailyFeeLimitLamports;
+      // Apply daily fee cap (5000 USD default, convert to lamports assuming 1 SOL = $1)
+      // TODO: Use actual SOL price if available
+      const dailyFeeLimit = BigInt(Math.floor(config.gifts.dailyFeeLimitUSD * 1e9));
       const dayCreatorFees = dayCreatorFeesRaw > dailyFeeLimit ? dailyFeeLimit : dayCreatorFeesRaw;
       
       const wasCapped = dayCreatorFeesRaw > dailyFeeLimit;

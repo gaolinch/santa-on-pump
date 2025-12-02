@@ -62,7 +62,7 @@ router.get('/day-:day', async (req: Request, res: Response) => {
     }
 
     // Get execution logs
-    let logs = [];
+    let logs: Awaited<ReturnType<typeof giftExecutionLogRepo.findByExecutionId>> = [];
     if (summary?.execution_id) {
       try {
         logs = await giftExecutionLogRepo.findByExecutionId(summary.execution_id);
