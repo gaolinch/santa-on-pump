@@ -17,8 +17,11 @@ function sha256(data) {
 }
 
 function hashGiftLeaf(gift, salt) {
+  // Remove the hash field if present (it's added after Merkle tree creation)
+  const { hash, ...giftWithoutHash } = gift;
+  
   // Create canonical JSON (sorted keys)
-  const canonicalGift = JSON.stringify(gift, Object.keys(gift).sort());
+  const canonicalGift = JSON.stringify(giftWithoutHash, Object.keys(giftWithoutHash).sort());
   const data = canonicalGift + salt;
   return sha256(data);
 }

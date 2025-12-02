@@ -95,11 +95,16 @@ router.get('/day-:day', async (req: Request, res: Response) => {
     }
 
     // Full reveal: Build complete reveal data from database
+    // IMPORTANT: The gift structure must match what was used during Merkle tree generation
+    // This includes: day, type, hint, sub_hint, params, distribution_source, notes
+    // The 'hash' field is NOT included (it's removed during verification)
     const revealData: any = {
       day: dayNumber,
       gift: {
         day: dayNumber,
         type: giftSpec.type,
+        hint: giftSpec.hint,
+        sub_hint: giftSpec.sub_hint,
         params: giftSpec.params,
         distribution_source: giftSpec.distribution_source || 'treasury_daily_fees',
         notes: giftSpec.notes
