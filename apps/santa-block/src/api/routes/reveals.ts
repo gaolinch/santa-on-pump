@@ -127,9 +127,33 @@ router.get('/day-:day', async (req: Request, res: Response) => {
         }
       }
       
-      // Get root from private merkle data (if available)
+      // Get root from multiple sources (in order of preference):
+      // 1. Private merkle data file (if available)
+      // 2. Environment variable (for production)
+      // 3. Reveal file (fallback)
       if (privateMerkleData && privateMerkleData.root) {
         revealData.root = privateMerkleData.root;
+      } else if (process.env.MERKLE_ROOT) {
+        // Use environment variable (for production where data folder doesn't exist)
+        revealData.root = process.env.MERKLE_ROOT;
+      } else {
+        // Fallback: try to load from reveal file
+        try {
+          const revealPath = path.join(__dirname, '../../../data/reveals', `day-${String(dayNumber).padStart(2, '0')}.json`);
+          if (fs.existsSync(revealPath)) {
+            const revealFile = JSON.parse(fs.readFileSync(revealPath, 'utf8'));
+            if (revealFile.root) {
+              revealData.root = revealFile.root;
+            }
+          }
+        } catch (error) {
+          logger.warn({ day: dayNumber, error }, 'Could not load root from reveal file');
+        }
+        
+        // If still no root, log warning
+        if (!revealData.root) {
+          logger.warn({ day: dayNumber }, 'Root not available - set MERKLE_ROOT environment variable or ensure data files exist');
+        }
       }
     } else {
       logger.warn({ day: dayNumber }, 'Merkle data not found in database for this day');
