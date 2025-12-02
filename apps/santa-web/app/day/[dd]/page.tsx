@@ -174,6 +174,9 @@ export default async function DayPage({ params }: PageProps) {
     
     // No proof and no reveal data
     const isDev = process.env.NODE_ENV === 'development'
+    const isSimulated = !!process.env.NEXT_PUBLIC_SIMULATE_DATE
+    const currentDate = new Date(process.env.NEXT_PUBLIC_SIMULATE_DATE || Date.now())
+    const currentDay = currentDate.getDate()
     
     return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
