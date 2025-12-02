@@ -207,7 +207,7 @@ export class TwitterService {
     }
     
     message += `📊 Full details & winners:\n${pageUrl}\n\n`;
-    message += `#SantaOnPump #Solana #OnChainAdvent`;
+    message += `#SantaOnPump #Solana #OnChainAdvent $SANTA`;
     
     // Twitter has a 280 character limit
     // URLs are counted as ~23 characters when shortened by Twitter

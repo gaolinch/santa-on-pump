@@ -474,11 +474,31 @@ export class WebSocketListener {
         logger.debug({ signature }, '[WebSocket] No Pump.fun fees found');
       }
 
+      // Get block time - fetch from RPC if not in WebSocket notification
+      // WebSocket transactionSubscribe doesn't include blockTime, so we need to fetch it
+      let block_time: Date;
+      if (transaction?.blockTime) {
+        // If blockTime is provided (rare), use it
+        block_time = new Date(transaction.blockTime * 1000);
+      } else {
+        // Fetch full transaction to get blockTime (most common case)
+        logger.debug({ signature }, '🔍 Fetching blockTime from RPC...');
+        const fullTx = await solanaService.getTransaction(signature);
+        if (fullTx?.blockTime) {
+          block_time = new Date(fullTx.blockTime * 1000);
+          logger.debug({ signature, blockTime: block_time.toISOString() }, '✅ BlockTime fetched from RPC');
+        } else {
+          // Fallback to current time if blockTime unavailable (should be rare)
+          block_time = new Date();
+          logger.warn({ signature }, '⚠️  BlockTime unavailable, using current time as fallback');
+        }
+      }
+
       // Save to database
       await txRawRepo.insert({
         signature,
         slot,
-        block_time: new Date(),
+        block_time,
         from_wallet: transfer.from,
         to_wallet: transfer.to || undefined,
         amount: transfer.amount,

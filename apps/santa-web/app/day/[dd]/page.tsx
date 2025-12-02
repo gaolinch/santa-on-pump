@@ -744,14 +744,14 @@ export default async function DayPage({ params }: PageProps) {
               )}
               {proof.executions && (
                 <>
-                  <p>
-                    <span className="font-semibold">Published:</span>{' '}
-                    {formatDate(proof.executions.published_at_utc)}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Closed At:</span>{' '}
-                    {formatDate(proof.executions.close_at_utc)}
-                  </p>
+              <p>
+                <span className="font-semibold">Published:</span>{' '}
+                {formatDate(proof.executions.published_at_utc)}
+              </p>
+              <p>
+                <span className="font-semibold">Closed At:</span>{' '}
+                {formatDate(proof.executions.close_at_utc)}
+              </p>
                 </>
               )}
               {(executionData?.execution?.tx_hashes || proof.executions?.tx_hashes || []).length > 0 && (

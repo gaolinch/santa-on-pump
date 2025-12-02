@@ -155,6 +155,8 @@ export const config = {
   schedule: {
     dailyCloseCron: process.env.DAILY_CLOSE_CRON || '5 0 * * *', // 00:05 UTC
   },
+
+  frontendUrl: process.env.FRONTEND_URL || 'https://santa-pump.fun',
 };
 
 // Validate required configuration

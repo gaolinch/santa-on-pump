@@ -5,12 +5,8 @@ import {
   TransactionInstruction,
   Keypair,
   sendAndConfirmTransaction,
+  SystemProgram,
 } from '@solana/web3.js';
-import {
-  TOKEN_PROGRAM_ID,
-  createTransferInstruction,
-  getAssociatedTokenAddress,
-} from '@solana/spl-token';
 import { solanaService } from './solana';
 import { config } from '../config';
 import { logger } from '../utils/logger';
@@ -29,23 +25,16 @@ export interface SignedTransaction {
 }
 
 /**
- * Transaction Builder - creates and submits SPL token transfers
+ * Transaction Builder - creates and submits native SOL transfers
+ * 
+ * Gifts distribute SOL (lamports) to winners, not SPL tokens
  */
 export class TransactionBuilder {
   private connection: Connection;
-  private tokenMint: PublicKey | null;
   private treasuryWallet: PublicKey | null;
 
   constructor() {
     this.connection = new (require('@solana/web3.js')).Connection(config.solana.rpcPrimary);
-    
-    // Only create PublicKeys if the values are provided
-    try {
-      this.tokenMint = config.santa.tokenMint ? new PublicKey(config.santa.tokenMint) : null;
-    } catch (error) {
-      logger.warn({ error }, 'Invalid token mint address, setting to null');
-      this.tokenMint = null;
-    }
     
     try {
       this.treasuryWallet = config.santa.treasuryWallet ? new PublicKey(config.santa.treasuryWallet) : null;
@@ -57,12 +46,14 @@ export class TransactionBuilder {
 
   /**
    * Build transfer bundle for winners
+   * 
+   * Creates transactions to send native SOL (lamports) to winners
    */
   async buildTransferBundle(winners: Winner[]): Promise<TransferBundle> {
-    logger.info({ winnerCount: winners.length }, 'Building transfer bundle');
+    logger.info({ winnerCount: winners.length }, 'Building SOL transfer bundle');
 
-    if (!this.tokenMint || !this.treasuryWallet) {
-      throw new Error('Token mint and treasury wallet must be configured to build transfer bundles');
+    if (!this.treasuryWallet) {
+      throw new Error('Treasury wallet must be configured to build transfer bundles');
     }
 
     const transactions: Transaction[] = [];
@@ -84,7 +75,9 @@ export class TransactionBuilder {
   }
 
   /**
-   * Create a batch transfer transaction
+   * Create a batch transfer transaction for native SOL transfers
+   * 
+   * Uses SystemProgram.transfer to send SOL (lamports) to multiple recipients
    */
   private async createBatchTransferTransaction(winners: Winner[]): Promise<Transaction> {
     const connection = await solanaService.getConnection();
@@ -95,39 +88,22 @@ export class TransactionBuilder {
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = this.treasuryWallet!;
 
-    // Get treasury token account
-    const treasuryTokenAccount = await getAssociatedTokenAddress(
-      this.tokenMint!,
-      this.treasuryWallet!
-    );
-
-    // Add transfer instruction for each winner
+    // Add native SOL transfer instruction for each winner
     for (const winner of winners) {
       const recipientWallet = new PublicKey(winner.wallet);
       
-      // Get or create associated token account for recipient
-      const recipientTokenAccount = await getAssociatedTokenAddress(
-        this.tokenMint!,
-        recipientWallet
-      );
-
-      // Check if recipient token account exists
-      const accountInfo = await connection.getAccountInfo(recipientTokenAccount);
+      // Create native SOL transfer instruction
+      // winner.amount is in lamports (SOL) as BigInt
+      // SystemProgram.transfer accepts number | bigint for lamports
+      const lamports = winner.amount <= BigInt(Number.MAX_SAFE_INTEGER)
+        ? Number(winner.amount)
+        : winner.amount; // Use BigInt if too large for safe integer conversion
       
-      // If account doesn't exist, we'll need to create it first
-      // For simplicity, assuming accounts exist or using a different approach
-      // In production, you'd add createAssociatedTokenAccountInstruction
-
-      // Create transfer instruction
-      // At this point we know treasuryWallet is not null due to check at start of buildTransferBundle
-      const transferInstruction = createTransferInstruction(
-        treasuryTokenAccount,
-        recipientTokenAccount,
-        this.treasuryWallet!,
-        BigInt(winner.amount),
-        [],
-        TOKEN_PROGRAM_ID
-      );
+      const transferInstruction = SystemProgram.transfer({
+        fromPubkey: this.treasuryWallet!,
+        toPubkey: recipientWallet,
+        lamports,
+      });
 
       transaction.add(transferInstruction);
     }

@@ -54,7 +54,12 @@
     "populate:merkle": "tsx src/scripts/populate-merkle-data.ts",
     "view:logs": "tsx src/scripts/view-execution-logs.ts",
     "demo:granular-logs": "tsx src/scripts/demo-granular-logging.ts",
-    "test:twitter": "tsx src/scripts/test-twitter.ts"
+    "test:twitter": "tsx src/scripts/test-twitter.ts",
+    "test:sol-transfer": "tsx src/scripts/test-sol-transfer.ts",
+    "execute:gift": "tsx src/scripts/execute-gift-interactive.ts",
+    "check:dates": "tsx src/scripts/check-available-dates.ts",
+    "debug:execution": "tsx src/scripts/debug-execution.ts",
+    "fix:execution-status": "tsx src/scripts/fix-execution-status.ts"
   },
   "keywords": [
     "solana",

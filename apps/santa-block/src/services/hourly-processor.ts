@@ -16,6 +16,7 @@ import { db, giftSpecRepo, auditLogRepo } from '../database';
 import { deterministicShuffle, generateRandomSeed } from '../utils/crypto';
 import { solanaService } from './solana';
 import { config } from '../config';
+import { tokenTransferService } from './gifts/token-transfer';
 
 export interface HourlyAirdropConfig {
   enabled: boolean;
@@ -538,7 +539,10 @@ export class HourlyProcessor {
       [targetDate, currentHour]
     );
 
-    return result.rows.map(row => ({
+    // Filter out excluded wallets
+    return result.rows
+      .filter(row => !config.santa.excludedWallets.includes(row.wallet))
+      .map(row => ({
       wallet: row.wallet,
       buyVolume: BigInt(row.buy_volume),
     }));
@@ -573,23 +577,29 @@ export class HourlyProcessor {
 
   /**
    * Transfer tokens to winner
-   * (Placeholder - actual implementation depends on your token transfer logic)
    */
   private async transferTokens(wallet: string, amount: number): Promise<string> {
-    // TODO: Implement actual token transfer using Solana
-    // This should use your existing token transfer logic
-    
     logger.info('Transferring tokens', { wallet, amount });
-    
-    // Example implementation:
-    // const signature = await solanaService.transferTokens(
-    //   config.santa.tokenMint,
-    //   wallet,
-    //   amount
-    // );
-    
-    // For now, return a mock signature
-    return `mock-tx-${Date.now()}`;
+
+    // Check if token transfer service is available
+    if (!tokenTransferService.isAvailable()) {
+      throw new Error('Token transfer service not available. Check SANTA_TREASURY_PRIVATE_KEY configuration.');
+    }
+
+    // Validate recipient wallet
+    const isValid = await tokenTransferService.validateRecipient(wallet);
+    if (!isValid) {
+      throw new Error(`Invalid recipient wallet: ${wallet}`);
+    }
+
+    // Execute transfer with retries
+    const result = await tokenTransferService.transferTokens(wallet, amount, 3);
+
+    if (!result.success) {
+      throw new Error(`Token transfer failed: ${result.error}`);
+    }
+
+    return result.signature;
   }
 
   /**
