@@ -361,11 +361,24 @@ export const giftSpecRepo = {
 
 export const giftExecRepo = {
   async insert(exec: GiftExec): Promise<string> {
+    // Serialize winners to JSON, handling BigInt values
+    const winnersJson = JSON.stringify(exec.winners, (key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      return value;
+    });
+    
+    // Convert total_distributed to string for PostgreSQL BIGINT
+    const totalDistributedStr = typeof exec.total_distributed === 'bigint' 
+      ? exec.total_distributed.toString() 
+      : String(exec.total_distributed);
+    
     const result = await db.query<{ id: string }>(
       `INSERT INTO gift_exec (day, gift_spec_id, winners, tx_hashes, total_distributed, execution_time, status, error_message)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       VALUES ($1, $2, $3::jsonb, $4, $5::bigint, $6, $7, $8)
        RETURNING id`,
-      [exec.day, exec.gift_spec_id, exec.winners, exec.tx_hashes, exec.total_distributed, exec.execution_time, exec.status, exec.error_message]
+      [exec.day, exec.gift_spec_id, winnersJson, exec.tx_hashes, totalDistributedStr, exec.execution_time, exec.status, exec.error_message]
     );
     return result.rows[0].id;
   },

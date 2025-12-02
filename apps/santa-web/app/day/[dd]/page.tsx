@@ -55,6 +55,25 @@ export default async function DayPage({ params }: PageProps) {
     console.log(`🎅 [Day ${day}] Error fetching reveal data:`, err)
   }
 
+  // Fetch execution data (winners, logs, transfers)
+  let executionData = null
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    const response = await fetch(`${apiUrl}/executions/day-${paddedDay}`, {
+      cache: 'no-store'
+    })
+    if (response.ok) {
+      executionData = await response.json()
+      console.log(`🎅 [Day ${day}] Loaded execution data:`, executionData.winners?.length || 0, 'winners')
+    } else if (response.status === 404) {
+      console.log(`🎅 [Day ${day}] No execution data available (404)`)
+    } else {
+      console.log(`🎅 [Day ${day}] Error fetching execution data: ${response.status}`)
+    }
+  } catch (err) {
+    console.log(`🎅 [Day ${day}] Error fetching execution data:`, err)
+  }
+
   // If no reveal data from API, show locked state
   if (!revealData) {
     return (
@@ -125,7 +144,7 @@ export default async function DayPage({ params }: PageProps) {
   // Time to reveal but no proof data available - check if we have reveal data
   if (!proof) {
     if (revealData && giftInfo) {
-      // We have reveal data, show simplified page
+      // We have reveal data, show simplified page (but include execution data if available)
       return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="max-w-4xl mx-auto">
@@ -156,6 +175,178 @@ export default async function DayPage({ params }: PageProps) {
                 </div>
               </div>
 
+              {/* Execution Details - Show even without proof */}
+              {executionData?.execution && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-2xl font-semibold mb-4">Execution Details</h2>
+                  <div className="space-y-2">
+                    <p>
+                      <span className="font-semibold">Execution Time:</span>{' '}
+                      {formatDate(new Date(executionData.execution.execution_time))}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Status:</span>{' '}
+                      <span className={`inline-block px-2 py-1 rounded text-sm ${
+                        executionData.execution.status === 'executed' || executionData.execution.status === 'confirmed'
+                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                          : executionData.execution.status === 'failed'
+                          ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                          : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                      }`}>
+                        {executionData.execution.status}
+                      </span>
+                    </p>
+                    <p>
+                      <span className="font-semibold">Total Distributed:</span>{' '}
+                      {executionData.execution.total_distributed_sol} SOL
+                    </p>
+                    {executionData.summary && (
+                      <>
+                        <p>
+                          <span className="font-semibold">Winners:</span>{' '}
+                          {executionData.summary.winner_count || executionData.winners?.length || 0}
+                        </p>
+                        {executionData.summary.duration_ms && (
+                          <p>
+                            <span className="font-semibold">Execution Duration:</span>{' '}
+                            {(executionData.summary.duration_ms / 1000).toFixed(2)}s
+                          </p>
+                        )}
+                      </>
+                    )}
+                    {(executionData?.execution?.tx_hashes || []).length > 0 && (
+                      <div>
+                        <span className="font-semibold">Transactions:</span>
+                        <ul className="list-disc list-inside mt-2 space-y-1">
+                          {(executionData.execution.tx_hashes || []).map((hash: string, idx: number) => (
+                            <li key={idx}>
+                              <a
+                                href={`https://solscan.io/tx/${hash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-festive-green-600 dark:text-festive-green-400 hover:underline font-mono text-sm"
+                              >
+                                {hash.slice(0, 16)}...{hash.slice(-8)}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Winners List */}
+              {executionData?.winners && executionData.winners.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-2xl font-semibold mb-4">
+                    Winners ({executionData.winners.length})
+                  </h2>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-gray-700">
+                          <th className="text-left py-2 px-3">Rank</th>
+                          <th className="text-left py-2 px-3">Wallet Address</th>
+                          <th className="text-right py-2 px-3">Reward (SOL)</th>
+                          {executionData.winners[0]?.balance && (
+                            <th className="text-right py-2 px-3">Balance</th>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {executionData.winners
+                          .sort((a: any, b: any) => Number(b.amount) - Number(a.amount))
+                          .map((winner: any, idx: number) => (
+                            <tr key={winner.wallet} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                              <td className="py-2 px-3">{idx + 1}</td>
+                              <td className="py-2 px-3 font-mono text-xs">
+                                <a
+                                  href={`https://solscan.io/account/${winner.wallet}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-festive-green-600 dark:text-festive-green-400 hover:underline"
+                                >
+                                  {winner.wallet.slice(0, 8)}...{winner.wallet.slice(-8)}
+                                </a>
+                              </td>
+                              <td className="text-right py-2 px-3 font-semibold">
+                                {Number(winner.amount_sol).toFixed(9)}
+                              </td>
+                              {winner.balance && (
+                                <td className="text-right py-2 px-3 text-gray-600 dark:text-gray-400">
+                                  {Number(winner.balance) / 1e9} tokens
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Execution Logs */}
+              {executionData?.logs && executionData.logs.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-2xl font-semibold mb-4">
+                    Execution Logs ({executionData.logs.length} steps)
+                  </h2>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {executionData.logs.map((log: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className={`p-3 rounded border-l-4 ${
+                          log.log_level === 'error'
+                            ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
+                            : log.log_level === 'warn'
+                            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
+                            : 'bg-gray-50 dark:bg-gray-900/50 border-gray-300 dark:border-gray-600'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-xs uppercase">
+                                {log.step_name}
+                              </span>
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                log.step_status === 'completed'
+                                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                                  : log.step_status === 'failed'
+                                  ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                                  : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                              }`}>
+                                {log.step_status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              {log.message}
+                            </p>
+                            {log.data && Object.keys(log.data).length > 0 && (
+                              <details className="mt-2">
+                                <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
+                                  View details
+                                </summary>
+                                <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">
+                                  {JSON.stringify(log.data, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                          </div>
+                          {log.duration_ms && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-4">
+                              {log.duration_ms}ms
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                 <h2 className="text-2xl font-semibold mb-4">Leaf Hash</h2>
                 <p className="font-mono text-sm break-all bg-gray-100 dark:bg-gray-900 p-3 rounded">
@@ -172,7 +363,178 @@ export default async function DayPage({ params }: PageProps) {
       )
     }
     
-    // No proof and no reveal data
+    // No proof and no reveal data - but check if we have execution data
+    if (executionData) {
+      // Show execution data even without proof/reveal
+      return (
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
+                Day {day} — {giftInfo ? getGiftTypeName(giftInfo.type) : 'Execution Results'}
+              </h1>
+            </div>
+
+            <div className="grid gap-6 mb-8">
+              {/* Execution Details */}
+              {executionData?.execution && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-2xl font-semibold mb-4">Execution Details</h2>
+                  <div className="space-y-2">
+                    <p>
+                      <span className="font-semibold">Execution Time:</span>{' '}
+                      {formatDate(new Date(executionData.execution.execution_time))}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Status:</span>{' '}
+                      <span className={`inline-block px-2 py-1 rounded text-sm ${
+                        executionData.execution.status === 'executed' || executionData.execution.status === 'confirmed'
+                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                          : executionData.execution.status === 'failed'
+                          ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                          : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                      }`}>
+                        {executionData.execution.status}
+                      </span>
+                    </p>
+                    <p>
+                      <span className="font-semibold">Total Distributed:</span>{' '}
+                      {executionData.execution.total_distributed_sol} SOL
+                    </p>
+                    {executionData.summary && (
+                      <>
+                        <p>
+                          <span className="font-semibold">Winners:</span>{' '}
+                          {executionData.summary.winner_count || executionData.winners?.length || 0}
+                        </p>
+                        {executionData.summary.duration_ms && (
+                          <p>
+                            <span className="font-semibold">Execution Duration:</span>{' '}
+                            {(executionData.summary.duration_ms / 1000).toFixed(2)}s
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Winners List */}
+              {executionData?.winners && executionData.winners.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-2xl font-semibold mb-4">
+                    Winners ({executionData.winners.length})
+                  </h2>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-gray-700">
+                          <th className="text-left py-2 px-3">Rank</th>
+                          <th className="text-left py-2 px-3">Wallet Address</th>
+                          <th className="text-right py-2 px-3">Reward (SOL)</th>
+                          {executionData.winners[0]?.balance && (
+                            <th className="text-right py-2 px-3">Balance</th>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {executionData.winners
+                          .sort((a: any, b: any) => Number(b.amount) - Number(a.amount))
+                          .map((winner: any, idx: number) => (
+                            <tr key={winner.wallet} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                              <td className="py-2 px-3">{idx + 1}</td>
+                              <td className="py-2 px-3 font-mono text-xs">
+                                <a
+                                  href={`https://solscan.io/account/${winner.wallet}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-festive-green-600 dark:text-festive-green-400 hover:underline"
+                                >
+                                  {winner.wallet.slice(0, 8)}...{winner.wallet.slice(-8)}
+                                </a>
+                              </td>
+                              <td className="text-right py-2 px-3 font-semibold">
+                                {Number(winner.amount_sol).toFixed(9)}
+                              </td>
+                              {winner.balance && (
+                                <td className="text-right py-2 px-3 text-gray-600 dark:text-gray-400">
+                                  {Number(winner.balance) / 1e9} tokens
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Execution Logs */}
+              {executionData?.logs && executionData.logs.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-2xl font-semibold mb-4">
+                    Execution Logs ({executionData.logs.length} steps)
+                  </h2>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {executionData.logs.map((log: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className={`p-3 rounded border-l-4 ${
+                          log.log_level === 'error'
+                            ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
+                            : log.log_level === 'warn'
+                            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
+                            : 'bg-gray-50 dark:bg-gray-900/50 border-gray-300 dark:border-gray-600'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-xs uppercase">
+                                {log.step_name}
+                              </span>
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                log.step_status === 'completed'
+                                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                                  : log.step_status === 'failed'
+                                  ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                                  : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                              }`}>
+                                {log.step_status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                              {log.message}
+                            </p>
+                            {log.data && Object.keys(log.data).length > 0 && (
+                              <details className="mt-2">
+                                <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
+                                  View details
+                                </summary>
+                                <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">
+                                  {JSON.stringify(log.data, null, 2)}
+                                </pre>
+                              </details>
+                            )}
+                          </div>
+                          {log.duration_ms && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-4">
+                              {log.duration_ms}ms
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // No proof, no reveal data, and no execution data
     const isDev = process.env.NODE_ENV === 'development'
     const isSimulated = !!process.env.NEXT_PUBLIC_SIMULATE_DATE
     const currentDate = new Date(process.env.NEXT_PUBLIC_SIMULATE_DATE || Date.now())
@@ -342,27 +704,69 @@ export default async function DayPage({ params }: PageProps) {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold mb-4">Execution Details</h2>
             <div className="space-y-2">
-              <p>
-                <span className="font-semibold">Published:</span>{' '}
-                {formatDate(proof.executions.published_at_utc)}
-              </p>
-              <p>
-                <span className="font-semibold">Closed At:</span>{' '}
-                {formatDate(proof.executions.close_at_utc)}
-              </p>
-              {proof.executions.tx_hashes.length > 0 && (
+              {executionData?.execution && (
+                <>
+                  <p>
+                    <span className="font-semibold">Execution Time:</span>{' '}
+                    {formatDate(new Date(executionData.execution.execution_time))}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Status:</span>{' '}
+                    <span className={`inline-block px-2 py-1 rounded text-sm ${
+                      executionData.execution.status === 'executed' || executionData.execution.status === 'confirmed'
+                        ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                        : executionData.execution.status === 'failed'
+                        ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                        : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                    }`}>
+                      {executionData.execution.status}
+                    </span>
+                  </p>
+                  <p>
+                    <span className="font-semibold">Total Distributed:</span>{' '}
+                    {executionData.execution.total_distributed_sol} SOL
+                  </p>
+                  {executionData.summary && (
+                    <>
+                      <p>
+                        <span className="font-semibold">Winners:</span>{' '}
+                        {executionData.summary.winner_count || executionData.winners?.length || 0}
+                      </p>
+                      {executionData.summary.duration_ms && (
+                        <p>
+                          <span className="font-semibold">Execution Duration:</span>{' '}
+                          {(executionData.summary.duration_ms / 1000).toFixed(2)}s
+                        </p>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+              {proof.executions && (
+                <>
+                  <p>
+                    <span className="font-semibold">Published:</span>{' '}
+                    {formatDate(proof.executions.published_at_utc)}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Closed At:</span>{' '}
+                    {formatDate(proof.executions.close_at_utc)}
+                  </p>
+                </>
+              )}
+              {(executionData?.execution?.tx_hashes || proof.executions?.tx_hashes || []).length > 0 && (
                 <div>
                   <span className="font-semibold">Transactions:</span>
                   <ul className="list-disc list-inside mt-2 space-y-1">
-                    {proof.executions.tx_hashes.map((hash, idx) => (
+                    {(executionData?.execution?.tx_hashes || proof.executions?.tx_hashes || []).map((hash: string, idx: number) => (
                       <li key={idx}>
                         <a
                           href={`https://solscan.io/tx/${hash}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-festive-green-600 dark:text-festive-green-400 hover:underline"
+                          className="text-festive-green-600 dark:text-festive-green-400 hover:underline font-mono text-sm"
                         >
-                          {hash.slice(0, 16)}...
+                          {hash.slice(0, 16)}...{hash.slice(-8)}
                         </a>
                       </li>
                     ))}
@@ -371,6 +775,116 @@ export default async function DayPage({ params }: PageProps) {
               )}
             </div>
           </div>
+
+          {/* Winners List */}
+          {executionData?.winners && executionData.winners.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-semibold mb-4">
+                Winners ({executionData.winners.length})
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="text-left py-2 px-3">Rank</th>
+                      <th className="text-left py-2 px-3">Wallet Address</th>
+                      <th className="text-right py-2 px-3">Reward (SOL)</th>
+                      {executionData.winners[0]?.balance && (
+                        <th className="text-right py-2 px-3">Balance</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {executionData.winners
+                      .sort((a: any, b: any) => Number(b.amount) - Number(a.amount))
+                      .map((winner: any, idx: number) => (
+                        <tr key={winner.wallet} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="py-2 px-3">{idx + 1}</td>
+                          <td className="py-2 px-3 font-mono text-xs">
+                            <a
+                              href={`https://solscan.io/account/${winner.wallet}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-festive-green-600 dark:text-festive-green-400 hover:underline"
+                            >
+                              {winner.wallet.slice(0, 8)}...{winner.wallet.slice(-8)}
+                            </a>
+                          </td>
+                          <td className="text-right py-2 px-3 font-semibold">
+                            {Number(winner.amount_sol).toFixed(9)}
+                          </td>
+                          {winner.balance && (
+                            <td className="text-right py-2 px-3 text-gray-600 dark:text-gray-400">
+                              {Number(winner.balance) / 1e9} tokens
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Execution Logs */}
+          {executionData?.logs && executionData.logs.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-semibold mb-4">
+                Execution Logs ({executionData.logs.length} steps)
+              </h2>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {executionData.logs.map((log: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className={`p-3 rounded border-l-4 ${
+                      log.log_level === 'error'
+                        ? 'bg-red-50 dark:bg-red-900/20 border-red-500'
+                        : log.log_level === 'warn'
+                        ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500'
+                        : 'bg-gray-50 dark:bg-gray-900/50 border-gray-300 dark:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-xs uppercase">
+                            {log.step_name}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            log.step_status === 'completed'
+                              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                              : log.step_status === 'failed'
+                              ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                              : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                          }`}>
+                            {log.step_status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          {log.message}
+                        </p>
+                        {log.data && Object.keys(log.data).length > 0 && (
+                          <details className="mt-2">
+                            <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
+                              View details
+                            </summary>
+                            <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">
+                              {JSON.stringify(log.data, null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                      {log.duration_ms && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-4">
+                          {log.duration_ms}ms
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold mb-4">Leaf Hash</h2>

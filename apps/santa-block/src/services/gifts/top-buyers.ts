@@ -6,7 +6,15 @@
 
 import { logger } from '../../utils/logger';
 import { giftLogger } from '../gift-logger';
+import { config } from '../../config';
 import { IGiftHandler, GiftExecutionContext, GiftResult, Winner } from './base-gift';
+
+/**
+ * Check if a wallet is excluded from gifts and airdrops
+ */
+function isWalletExcluded(wallet: string): boolean {
+  return config.santa.excludedWallets.includes(wallet);
+}
 
 export class TopBuyersGift implements IGiftHandler {
   getType(): string {
@@ -15,6 +23,7 @@ export class TopBuyersGift implements IGiftHandler {
 
   async execute(context: GiftExecutionContext): Promise<GiftResult> {
     const { spec, transactions, treasuryBalance } = context;
+    // Note: treasuryBalance is actually the day's creator fees (from day_pool.fees_in)
     const { top_n = 10, allocation_percent = 40 } = spec.params;
 
     logger.info({ 
@@ -68,6 +77,10 @@ export class TopBuyersGift implements IGiftHandler {
     
     const walletVolumes = new Map<string, bigint>();
     for (const tx of buyTxs) {
+      // Exclude blacklisted wallets
+      if (isWalletExcluded(tx.from_wallet)) {
+        continue;
+      }
       const current = walletVolumes.get(tx.from_wallet) || BigInt(0);
       walletVolumes.set(tx.from_wallet, current + tx.amount);
     }

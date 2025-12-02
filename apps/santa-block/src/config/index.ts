@@ -77,6 +77,26 @@ export const config = {
     totalSupply: 1_000_000_000,
     // Token transfer mode: 'real' to send actual tokens, 'dryrun' to only log
     transferMode: (process.env.TOKEN_TRANSFER_MODE || 'dryrun') as 'real' | 'dryrun',
+    // Dev and airdrop wallets (always excluded from gifts and airdrops)
+    devWallet: process.env.DEV_WALLET || '',
+    airdropWallet: process.env.AIRDROP_WALLET || '',
+    // Excluded wallets (comma-separated) - these wallets will never receive gifts or airdrops
+    // Automatically includes DEV_WALLET and AIRDROP_WALLET if configured
+    excludedWallets: (() => {
+      const excluded = (process.env.EXCLUDED_WALLETS || '').split(',').filter(w => w.trim().length > 0).map(w => w.trim());
+      const devWallet = process.env.DEV_WALLET?.trim();
+      const airdropWallet = process.env.AIRDROP_WALLET?.trim();
+      
+      // Automatically add DEV_WALLET and AIRDROP_WALLET if they're configured
+      if (devWallet && !excluded.includes(devWallet)) {
+        excluded.push(devWallet);
+      }
+      if (airdropWallet && !excluded.includes(airdropWallet)) {
+        excluded.push(airdropWallet);
+      }
+      
+      return excluded;
+    })(),
   },
 
   multisig: {
@@ -113,6 +133,10 @@ export const config = {
     hashFile: process.env.GIFTS_HASH_FILE || './data/gifts-hash.json',
     fullFile: process.env.GIFTS_FULL_FILE || './data/gifts-full.json',
     salt: process.env.GIFTS_SALT || '',
+    // Daily fee cap: Maximum USD value that can be distributed per day (default: 5000 USD)
+    // This will be converted to SOL dynamically based on current SOL/USD price
+    // If creator fees exceed this USD value, the cap is used instead
+    dailyFeeLimitUSD: parseFloat(process.env.DAILY_FEE_LIMIT_USD || '5000'),
   },
 
   monitoring: {

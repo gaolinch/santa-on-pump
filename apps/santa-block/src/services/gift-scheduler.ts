@@ -17,6 +17,9 @@ import { solanaService } from './solana';
 import { giftEngine } from './gifts';
 import { transactionBuilder } from './transaction-builder';
 import { getPreviousUTCDate, getAdventDay } from '../utils/date';
+import { config } from '../config';
+import { priceService } from './price-service';
+import { twitterService } from './twitter-service';
 
 export interface ScheduleConfig {
   dailyCloseCron: string;
@@ -201,6 +204,19 @@ export class GiftScheduler {
       const poolId = await dayPoolRepo.closeDay(targetDay);
       logger.info({ poolId }, 'Day pool closed');
 
+      // Phase 1.5: Create holder snapshot (if not exists)
+      giftLogger.logPhase(adventDay, 'create_holder_snapshot');
+      let holders = await holderSnapshotRepo.findByDay(targetDay);
+      
+      if (holders.length === 0) {
+        logger.info('No holder snapshot found, creating snapshot...');
+        const snapshotCount = await holderSnapshotRepo.createSnapshot(targetDay);
+        logger.info({ snapshotCount }, 'Holder snapshot created');
+        holders = await holderSnapshotRepo.findByDay(targetDay);
+      } else {
+        logger.info({ count: holders.length }, 'Holder snapshot already exists');
+      }
+
       // Phase 2: Get gift specification
       giftLogger.logPhase(adventDay, 'load_gift_spec');
       const giftSpec = await giftSpecRepo.findByDay(adventDay);
@@ -219,11 +235,38 @@ export class GiftScheduler {
       const transactions = await txRawRepo.findByDay(targetDay);
       logger.info({ count: transactions.length }, 'Transactions loaded');
 
-      const holders = await holderSnapshotRepo.findByDay(targetDay);
-      logger.info({ count: holders.length }, 'Holders loaded');
+      logger.info({ count: holders.length }, 'Holders loaded from snapshot');
 
-      const treasuryBalance = await solanaService.getTreasuryBalance();
-      logger.info({ balance: treasuryBalance.toString() }, 'Treasury balance loaded');
+      // Get day pool to use creator fees (not treasury balance)
+      const dayPool = await dayPoolRepo.findByDay(targetDay);
+      if (!dayPool) {
+        throw new Error(`Day pool not found for ${targetDay.toISOString().split('T')[0]}. Close the day pool first.`);
+      }
+
+      // Use day's creator fees as the distribution source (capped at daily limit)
+      const dayCreatorFeesRaw = typeof dayPool.fees_in === 'string' 
+        ? BigInt(dayPool.fees_in) 
+        : typeof dayPool.fees_in === 'bigint' 
+          ? dayPool.fees_in 
+          : BigInt(String(dayPool.fees_in));
+      
+      // Apply daily fee cap (5000 SOL default)
+      const dailyFeeLimit = config.gifts.dailyFeeLimitLamports;
+      const dayCreatorFees = dayCreatorFeesRaw > dailyFeeLimit ? dailyFeeLimit : dayCreatorFeesRaw;
+      
+      const wasCapped = dayCreatorFeesRaw > dailyFeeLimit;
+      
+      logger.info({ 
+        feesInRaw: dayCreatorFeesRaw.toString(),
+        feesInRawSOL: (Number(dayCreatorFeesRaw) / 1e9).toFixed(9),
+        dailyFeeLimit: dailyFeeLimit.toString(),
+        dailyFeeLimitSOL: (Number(dailyFeeLimit) / 1e9).toFixed(0),
+        feesInCapped: dayCreatorFees.toString(),
+        feesInCappedSOL: (Number(dayCreatorFees) / 1e9).toFixed(9),
+        wasCapped,
+      }, wasCapped 
+        ? `Day creator fees capped at ${(Number(dailyFeeLimit) / 1e9).toFixed(0)} SOL (raw: ${(Number(dayCreatorFeesRaw) / 1e9).toFixed(9)} SOL)`
+        : 'Day creator fees loaded (this is what will be distributed)');
 
       const lastSlot = await solanaService.getLastSlotForDate(targetDay);
       const blockhash = lastSlot ? await solanaService.getBlockhashForSlot(lastSlot) : null;
@@ -238,7 +281,7 @@ export class GiftScheduler {
         giftSpec,
         transactions,
         holders,
-        treasuryBalance,
+        dayCreatorFees, // Use day's creator fees instead of treasury balance
         blockhash
       );
 
@@ -290,6 +333,29 @@ export class GiftScheduler {
           proposalIds,
         }
       );
+
+      // Post to Twitter/X
+      try {
+        const frontendUrl = process.env.FRONTEND_URL || 'https://santa-pump.fun';
+        const pageUrl = `${frontendUrl}/day/${adventDay.toString().padStart(2, '0')}`;
+        const totalDistributedSOL = (Number(result.totalDistributed) / 1e9).toFixed(9);
+        
+        const tweetId = await twitterService.postExecutionResults({
+          day: adventDay,
+          giftType: giftSpec.type,
+          winnerCount: result.winners.length,
+          totalDistributedSOL,
+          pageUrl,
+          txHashes: proposalIds,
+        });
+        
+        if (tweetId) {
+          logger.info({ tweetId, day: adventDay }, '✅ Posted execution results to Twitter/X');
+        }
+      } catch (error) {
+        logger.error({ error, day: adventDay }, '⚠️  Failed to post to Twitter/X (non-fatal)');
+        // Don't fail the execution if Twitter posting fails
+      }
 
     } catch (error) {
       await giftLogger.failExecution(adventDay, error as Error);

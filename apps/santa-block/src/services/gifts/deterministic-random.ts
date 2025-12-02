@@ -10,6 +10,13 @@ import { deterministicShuffle, generateRandomSeed } from '../../utils/crypto';
 import { config } from '../../config';
 import { IGiftHandler, GiftExecutionContext, GiftResult, Winner } from './base-gift';
 
+/**
+ * Check if a wallet is excluded from gifts and airdrops
+ */
+function isWalletExcluded(wallet: string): boolean {
+  return config.santa.excludedWallets.includes(wallet);
+}
+
 export class DeterministicRandomGift implements IGiftHandler {
   getType(): string {
     return 'deterministic_random';
@@ -17,6 +24,7 @@ export class DeterministicRandomGift implements IGiftHandler {
 
   async execute(context: GiftExecutionContext): Promise<GiftResult> {
     const { spec, holders, treasuryBalance, blockhash } = context;
+    // Note: treasuryBalance is actually the day's creator fees (from day_pool.fees_in)
     const { winner_count = 10, allocation_percent = 40, min_balance = 0 } = spec.params;
 
     logger.info({ 
@@ -39,8 +47,10 @@ export class DeterministicRandomGift implements IGiftHandler {
       }
     );
 
-    // Filter eligible holders
-    const eligible = holders.filter((h) => h.balance >= BigInt(min_balance));
+    // Filter eligible holders (exclude blacklisted wallets)
+    const eligible = holders
+      .filter((h) => !isWalletExcluded(h.wallet)) // Exclude blacklisted wallets
+      .filter((h) => h.balance >= BigInt(min_balance));
 
     logger.info({ 
       day: spec.day,

@@ -364,25 +364,19 @@ export class SolanaService {
   }
 
   /**
-   * Get treasury balance
+   * Get treasury SOL balance (in lamports)
+   * This is the native SOL balance, not token balance
    */
   async getTreasuryBalance(): Promise<bigint> {
-    if (!this.treasuryWallet || !this.tokenMint) {
-      logger.warn('Treasury wallet or token mint not configured');
+    if (!this.treasuryWallet) {
+      logger.warn('Treasury wallet not configured');
       return BigInt(0);
     }
     
     const connection = await this.getConnection();
-    const accounts = await connection.getTokenAccountsByOwner(this.treasuryWallet, {
-      mint: this.tokenMint,
-    });
-
-    if (accounts.value.length === 0) {
-      return BigInt(0);
-    }
-
-    const balance = await this.getTokenAccountBalance(accounts.value[0].pubkey);
-    return balance;
+    // Get SOL balance (native balance) in lamports
+    const balance = await connection.getBalance(this.treasuryWallet);
+    return BigInt(balance);
   }
 
   /**

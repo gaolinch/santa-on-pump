@@ -172,6 +172,13 @@ export default function TerminalPage() {
 
   const formatAmount = (amount: string) => {
     const num = parseFloat(amount) / 1e9; // Assuming 9 decimals for SOL/SPL tokens
+    
+    // If >= 1000, format with K suffix
+    if (num >= 1000) {
+      const thousands = num / 1000;
+      return `${thousands.toLocaleString(undefined, { maximumFractionDigits: 4 })}K`;
+    }
+    
     return num.toLocaleString(undefined, { maximumFractionDigits: 4 });
   };
 

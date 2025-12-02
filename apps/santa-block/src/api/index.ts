@@ -11,6 +11,7 @@ import adminRoutes from './routes/admin';
 import transactionsRoutes from './routes/transactions';
 import schedulerRoutes from './routes/scheduler';
 import hourlyAirdropsRoutes from './routes/hourly-airdrops';
+import executionsRoutes from './routes/executions';
 
 export function createApp(): Application {
   const app = express();
@@ -124,6 +125,7 @@ export function createApp(): Application {
   app.use('/stats', statsRoutes);
   app.use('/proofs', strictLimiter, proofsRoutes); // Stricter limits on individual proofs, but not /all/gifts
   app.use('/reveals', revealsRoutes); // Daily reveal data
+  app.use('/executions', executionsRoutes); // Execution details (winners, logs, transfers)
   app.use('/admin', adminRoutes);
   app.use('/transactions', transactionsRoutes);
   app.use('/scheduler', schedulerRoutes);
@@ -140,6 +142,7 @@ export function createApp(): Application {
         stats: '/stats',
         proofs: '/proofs',
         reveals: '/reveals',
+        executions: '/executions',
         admin: '/admin (requires auth)',
         transactions: '/transactions',
         scheduler: '/scheduler',

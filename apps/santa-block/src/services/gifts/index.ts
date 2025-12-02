@@ -44,7 +44,7 @@ export class GiftEngine {
    * @param spec - Gift specification from database
    * @param transactions - Day's transactions
    * @param holders - Day's holder snapshot
-   * @param treasuryBalance - Current treasury balance
+   * @param treasuryBalance - Day's creator fees (from day_pool.fees_in), NOT treasury wallet balance
    * @param blockhash - Blockhash for deterministic randomness
    * @returns Gift execution result with winners and amounts
    */

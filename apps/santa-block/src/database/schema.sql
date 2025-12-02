@@ -432,22 +432,45 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Function to snapshot holders
+-- Corrected logic:
+-- - BUY: buyer is to_wallet (receives tokens) - ADD amount
+-- - SELL: seller is from_wallet (sends tokens) - SUBTRACT amount
 CREATE OR REPLACE FUNCTION snapshot_holders(target_date DATE)
 RETURNS INTEGER AS $$
 DECLARE
     snapshot_count INTEGER;
 BEGIN
     -- Calculate balances and ranks
-    WITH ranked_holders AS (
+    WITH holder_balances AS (
+        -- BUY transactions: buyer receives tokens (to_wallet gets +amount)
         SELECT 
-            from_wallet as wallet,
-            SUM(CASE WHEN kind = 'buy' THEN amount ELSE -amount END) as balance,
-            RANK() OVER (ORDER BY SUM(CASE WHEN kind = 'buy' THEN amount ELSE -amount END) DESC) as rank
+            to_wallet as wallet,
+            amount as balance_change
         FROM tx_raw
         WHERE DATE(block_time) <= target_date
         AND status = 'finalized'
-        GROUP BY from_wallet
-        HAVING SUM(CASE WHEN kind = 'buy' THEN amount ELSE -amount END) > 0
+        AND kind = 'buy'
+        AND to_wallet IS NOT NULL
+        
+        UNION ALL
+        
+        -- SELL transactions: seller sends tokens (from_wallet gets -amount)
+        SELECT 
+            from_wallet as wallet,
+            -amount as balance_change
+        FROM tx_raw
+        WHERE DATE(block_time) <= target_date
+        AND status = 'finalized'
+        AND kind = 'sell'
+    ),
+    ranked_holders AS (
+        SELECT 
+            wallet,
+            SUM(balance_change) as balance,
+            RANK() OVER (ORDER BY SUM(balance_change) DESC) as rank
+        FROM holder_balances
+        GROUP BY wallet
+        HAVING SUM(balance_change) > 0
     )
     INSERT INTO holders_snapshot (day, wallet, balance, rank)
     SELECT target_date, wallet, balance, rank

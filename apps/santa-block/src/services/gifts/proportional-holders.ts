@@ -6,7 +6,25 @@
 
 import { logger } from '../../utils/logger';
 import { giftLogger } from '../gift-logger';
+import { config } from '../../config';
 import { IGiftHandler, GiftExecutionContext, GiftResult, Winner } from './base-gift';
+
+/**
+ * Helper function to normalize balance to BigInt
+ * Handles cases where PostgreSQL returns BIGINT as string
+ */
+function toBigInt(value: string | bigint | number): bigint {
+  if (typeof value === 'bigint') return value;
+  if (typeof value === 'string') return BigInt(value);
+  return BigInt(value);
+}
+
+/**
+ * Check if a wallet is excluded from gifts and airdrops
+ */
+function isWalletExcluded(wallet: string): boolean {
+  return config.santa.excludedWallets.includes(wallet);
+}
 
 export class ProportionalHoldersGift implements IGiftHandler {
   getType(): string {
@@ -15,37 +33,55 @@ export class ProportionalHoldersGift implements IGiftHandler {
 
   async execute(context: GiftExecutionContext): Promise<GiftResult> {
     const { spec, holders, treasuryBalance } = context;
+    // Note: treasuryBalance is actually the day's creator fees (from day_pool.fees_in)
     const { allocation_percent = 40, min_balance = 0, token_airdrop } = spec.params;
+
+    // Special case for Day 1: select ALL holders with balance > 1000
+    const isDay1 = spec.day === 1;
+    const day1MinBalance = 1000;
+    const filterDescription = isDay1 
+      ? `all holders with balance > ${day1MinBalance}` 
+      : `minimum balance of ${min_balance}`;
 
     logger.info({ 
       day: spec.day, 
       type: spec.type,
       totalHolders: holders.length,
-      minBalance: min_balance,
+      minBalance: isDay1 ? day1MinBalance : min_balance,
+      filterType: isDay1 ? 'balance_gt_1000' : 'min_balance_threshold',
       allocationPercent: allocation_percent,
-    }, '🔍 Step 1: Filtering eligible holders');
+    }, `🔍 Step 1: Filtering eligible holders (${filterDescription})`);
 
     // Save step to database
     await giftLogger.logStep(
       spec.day,
       spec.type,
       'filter_eligible_holders',
-      'Filtering eligible holders based on minimum balance',
+      isDay1 
+        ? `Filtering eligible holders: all holders with balance > ${day1MinBalance} (Day 1 special case)`
+        : 'Filtering eligible holders based on minimum balance',
       {
         totalHolders: holders.length,
-        minBalance: min_balance,
+        minBalance: isDay1 ? day1MinBalance : min_balance,
+        filterType: isDay1 ? 'balance_gt_1000' : 'min_balance_threshold',
         allocationPercent: allocation_percent,
       }
     );
 
-    // Filter eligible holders
-    const eligible = holders.filter((h) => h.balance >= BigInt(min_balance));
+    // Filter eligible holders (normalize balances to BigInt first, exclude blacklisted wallets)
+    const eligible = holders
+      .map(h => ({ ...h, balance: toBigInt(h.balance) }))
+      .filter((h) => !isWalletExcluded(h.wallet)) // Exclude blacklisted wallets
+      .filter((h) => isDay1 
+        ? h.balance > BigInt(day1MinBalance)
+        : h.balance >= BigInt(min_balance));
 
     logger.info({ 
       day: spec.day,
       eligibleCount: eligible.length,
       filteredOut: holders.length - eligible.length,
-    }, `✅ Found ${eligible.length} eligible holders (filtered ${holders.length - eligible.length} below min balance)`);
+      filterType: isDay1 ? 'balance_gt_1000' : 'min_balance_threshold',
+    }, `✅ Found ${eligible.length} eligible holders (filtered ${holders.length - eligible.length} ${isDay1 ? `with balance <= ${day1MinBalance}` : 'below min balance'})`);
 
     await giftLogger.logStep(
       spec.day,
@@ -67,59 +103,35 @@ export class ProportionalHoldersGift implements IGiftHandler {
       };
     }
 
-    // Calculate total balance
-    logger.info({ day: spec.day }, '🧮 Step 2: Calculating total holder balance');
-    
-    await giftLogger.logStep(
-      spec.day,
-      spec.type,
-      'calculate_total_balance',
-      'Calculating total holder balance',
-      {}
-    );
-    
-    const totalBalance = eligible.reduce((sum, h) => sum + h.balance, BigInt(0));
-    
-    logger.info({ 
-      day: spec.day,
-      totalBalance: totalBalance.toString(),
-      totalBalanceSOL: (Number(totalBalance) / 1e9).toFixed(4),
-    }, `✅ Total balance: ${totalBalance.toString()} lamports (${(Number(totalBalance) / 1e9).toFixed(4)} SOL)`);
+    // Calculate total balance (for distribution calculation, but don't log it)
+    const totalBalance = eligible.reduce((sum, h) => sum + toBigInt(h.balance), BigInt(0));
 
-    await giftLogger.logStep(
-      spec.day,
-      spec.type,
-      'total_balance_calculated',
-      `Total balance: ${totalBalance.toString()} lamports`,
-      {
-        totalBalance: totalBalance.toString(),
-        totalBalanceSOL: (Number(totalBalance) / 1e9).toFixed(4),
-      }
-    );
-
-    // Calculate distribution pool
-    logger.info({ day: spec.day }, '💰 Step 3: Calculating distribution pool');
+    // Calculate distribution pool from day's creator fees (already capped at daily limit)
+    logger.info({ day: spec.day }, '💰 Step 3: Calculating distribution pool from day creator fees');
     
     await giftLogger.logStep(
       spec.day,
       spec.type,
       'calculate_distribution_pool',
-      'Calculating distribution pool from treasury',
+      'Calculating distribution pool from day creator fees (capped at daily limit)',
       {
-        treasuryBalance: treasuryBalance.toString(),
+        dayCreatorFees: treasuryBalance.toString(),
         allocationPercent: allocation_percent,
       }
     );
     
-    const distributionPool = (treasuryBalance * BigInt(allocation_percent)) / BigInt(100);
+    // treasuryBalance is actually the day's creator fees (from day_pool.fees_in, already capped at daily limit)
+    const dayCreatorFees = treasuryBalance;
+    const distributionPool = (dayCreatorFees * BigInt(allocation_percent)) / BigInt(100);
     
     logger.info({ 
       day: spec.day,
-      treasuryBalance: treasuryBalance.toString(),
+      dayCreatorFees: dayCreatorFees.toString(),
+      dayCreatorFeesSOL: (Number(dayCreatorFees) / 1e9).toFixed(9),
       allocationPercent: allocation_percent,
       distributionPool: distributionPool.toString(),
-      distributionPoolSOL: (Number(distributionPool) / 1e9).toFixed(4),
-    }, `✅ Distribution pool: ${distributionPool.toString()} lamports (${(Number(distributionPool) / 1e9).toFixed(4)} SOL)`);
+      distributionPoolSOL: (Number(distributionPool) / 1e9).toFixed(9),
+    }, `✅ Distribution pool: ${distributionPool.toString()} lamports (${(Number(distributionPool) / 1e9).toFixed(9)} SOL) from ${(Number(dayCreatorFees) / 1e9).toFixed(9)} SOL creator fees`);
 
     await giftLogger.logStep(
       spec.day,
@@ -146,15 +158,16 @@ export class ProportionalHoldersGift implements IGiftHandler {
     );
     
     const winners: Winner[] = eligible.map((holder, index) => {
-      const share = (holder.balance * distributionPool) / totalBalance;
-      const percentage = (Number(holder.balance) / Number(totalBalance) * 100).toFixed(4);
+      const holderBalance = toBigInt(holder.balance);
+      const share = (holderBalance * distributionPool) / totalBalance;
+      const percentage = (Number(holderBalance) / Number(totalBalance) * 100).toFixed(4);
       
       // Log first 5 and last 5 for brevity
       if (index < 5 || index >= eligible.length - 5) {
         logger.info({
           day: spec.day,
           wallet: holder.wallet,
-          balance: holder.balance.toString(),
+          balance: holderBalance.toString(),
           sharePercent: percentage,
           amount: share.toString(),
           amountSOL: (Number(share) / 1e9).toFixed(6),
@@ -166,7 +179,7 @@ export class ProportionalHoldersGift implements IGiftHandler {
       return {
         wallet: holder.wallet,
         amount: share,
-        reason: `proportional_balance_${holder.balance}`,
+        reason: `proportional_balance_${holderBalance}`,
       };
     });
 

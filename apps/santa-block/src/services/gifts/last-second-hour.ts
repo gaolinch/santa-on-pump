@@ -6,7 +6,15 @@
 
 import { logger } from '../../utils/logger';
 import { giftLogger } from '../gift-logger';
+import { config } from '../../config';
 import { IGiftHandler, GiftExecutionContext, GiftResult, Winner } from './base-gift';
+
+/**
+ * Check if a wallet is excluded from gifts and airdrops
+ */
+function isWalletExcluded(wallet: string): boolean {
+  return config.santa.excludedWallets.includes(wallet);
+}
 
 export class LastSecondHourGift implements IGiftHandler {
   getType(): string {
@@ -15,6 +23,7 @@ export class LastSecondHourGift implements IGiftHandler {
 
   async execute(context: GiftExecutionContext): Promise<GiftResult> {
     const { spec, transactions, treasuryBalance } = context;
+    // Note: treasuryBalance is actually the day's creator fees (from day_pool.fees_in)
     const { winner_count = 5, allocation_percent = 40 } = spec.params;
 
     logger.info({
@@ -35,10 +44,10 @@ export class LastSecondHourGift implements IGiftHandler {
       }
     );
 
-    // Filter transactions in last hour
+    // Filter transactions in last hour (exclude blacklisted wallets)
     const lastHourTxs = transactions.filter((tx) => {
       const hour = tx.block_time.getUTCHours();
-      return hour === 23;
+      return hour === 23 && !isWalletExcluded(tx.from_wallet);
     });
 
     logger.info({

@@ -15,6 +15,7 @@ export class NGODonationGift implements IGiftHandler {
 
   async execute(context: GiftExecutionContext): Promise<GiftResult> {
     const { spec, treasuryBalance } = context;
+    // Note: treasuryBalance is actually the day's creator fees (from day_pool.fees_in)
     const { ngo_wallet, percent = 100 } = spec.params;
     
     logger.info({
