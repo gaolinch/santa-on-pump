@@ -70,10 +70,13 @@ export const config = {
   },
 
   santa: {
-    tokenMint: process.env.SANTA_TOKEN_MINT || '',
+    tokenMint: process.env.SANTA_TOKEN_MINT || process.env.PUMP_FUN_TOKEN || '',
     treasuryWallet: process.env.SANTA_TREASURY_WALLET || '',
-    decimals: parseInt(process.env.SANTA_DECIMALS || '9', 10),
+    treasuryPrivateKey: process.env.SANTA_TREASURY_PRIVATE_KEY || '',
+    decimals: parseInt(process.env.SANTA_DECIMALS || process.env.PUMP_FUN_DECIMALS || '9', 10),
     totalSupply: 1_000_000_000,
+    // Token transfer mode: 'real' to send actual tokens, 'dryrun' to only log
+    transferMode: (process.env.TOKEN_TRANSFER_MODE || 'dryrun') as 'real' | 'dryrun',
   },
 
   multisig: {

@@ -94,7 +94,7 @@ router.get('/day-:day', async (req: Request, res: Response) => {
       });
     }
 
-    // Full reveal: Build complete reveal data from database + merkle data
+    // Full reveal: Build complete reveal data from database
     const revealData: any = {
       day: dayNumber,
       gift: {
@@ -106,17 +106,28 @@ router.get('/day-:day', async (req: Request, res: Response) => {
       }
     };
 
-    // Add Merkle proof data if available
-    if (privateMerkleData && privateMerkleData.days) {
-      const dayData = privateMerkleData.days.find((d: any) => d.day === dayNumber);
-      if (dayData) {
-        revealData.salt = dayData.salt;
-        revealData.leaf = dayData.leaf;
-        revealData.proof = dayData.proof;
-        revealData.root = privateMerkleData.root;
-      } else {
-        logger.warn({ day: dayNumber }, 'Merkle proof data not found for day');
+    // Add Merkle proof data from database
+    if (giftSpec.salt && giftSpec.leaf) {
+      revealData.salt = giftSpec.salt;
+      revealData.leaf = giftSpec.leaf;
+      
+      // Parse proof if it exists
+      if (giftSpec.proof) {
+        try {
+          revealData.proof = typeof giftSpec.proof === 'string' 
+            ? JSON.parse(giftSpec.proof) 
+            : giftSpec.proof;
+        } catch (error) {
+          logger.warn({ day: dayNumber, error }, 'Failed to parse proof from database');
+        }
       }
+      
+      // Get root from private merkle data (if available)
+      if (privateMerkleData && privateMerkleData.root) {
+        revealData.root = privateMerkleData.root;
+      }
+    } else {
+      logger.warn({ day: dayNumber }, 'Merkle data not found in database for this day');
     }
 
     // Return the full reveal data

@@ -36,7 +36,7 @@ export default async function DayPage({ params }: PageProps) {
   const proof = await getProof(paddedDay)
   const giftInfo = await getGiftByDay(day)
   
-  // Fetch reveal data from backend API - this determines what we can show
+  // Fetch reveal data from API - this determines what we can show
   let revealData = null
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -173,6 +173,8 @@ export default async function DayPage({ params }: PageProps) {
     }
     
     // No proof and no reveal data
+    const isDev = process.env.NODE_ENV === 'development'
+    
     return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-3xl mx-auto">
@@ -184,6 +186,22 @@ export default async function DayPage({ params }: PageProps) {
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
               This gift will be revealed on December {day}, 2025.
             </p>
+            {isDev && isSimulated && (
+              <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500 dark:border-yellow-700 rounded-lg p-4">
+                <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+                  🛠️ Development Mode: Date Simulated
+                </p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
+                  Current simulated date: <strong>{currentDate.toLocaleDateString()}</strong> (Day {currentDay})
+                </p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  No proof data available for Day {day}. To test this day, create mock data at:
+                  <code className="block mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded text-xs font-mono">
+                    /public/mock/day/{paddedDay}.json
+                  </code>
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">

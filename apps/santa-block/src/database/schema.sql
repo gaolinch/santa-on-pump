@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS tx_raw (
     signature TEXT NOT NULL,
     sub_tx INTEGER DEFAULT 0, -- Sub-transaction index for multi-transfer transactions (0 = single transfer)
     slot BIGINT NOT NULL,
-    block_time TIMESTAMP NOT NULL,
+    block_time TIMESTAMPTZ NOT NULL, -- Block time from Solana in UTC
     from_wallet TEXT NOT NULL,
     to_wallet TEXT,
     amount BIGINT NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS tx_raw (
     creator_fee_bps INTEGER DEFAULT 30, -- Creator fee basis points
     status TEXT DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'finalized', 'failed')),
     metadata JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(signature, sub_tx) -- Allow same signature with different sub_tx values
 );
 
@@ -132,8 +132,52 @@ CREATE TABLE IF NOT EXISTS gift_spec (
     distribution_source TEXT DEFAULT 'treasury_daily_fees',
     notes TEXT,
     hash TEXT NOT NULL,
+    hint TEXT,
+    sub_hint TEXT,
+    salt TEXT,
+    leaf TEXT,
+    proof JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add hint columns if they don't exist (for existing tables)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'gift_spec' AND column_name = 'hint'
+    ) THEN
+        ALTER TABLE gift_spec ADD COLUMN hint TEXT;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'gift_spec' AND column_name = 'sub_hint'
+    ) THEN
+        ALTER TABLE gift_spec ADD COLUMN sub_hint TEXT;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'gift_spec' AND column_name = 'salt'
+    ) THEN
+        ALTER TABLE gift_spec ADD COLUMN salt TEXT;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'gift_spec' AND column_name = 'leaf'
+    ) THEN
+        ALTER TABLE gift_spec ADD COLUMN leaf TEXT;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'gift_spec' AND column_name = 'proof'
+    ) THEN
+        ALTER TABLE gift_spec ADD COLUMN proof JSONB;
+    END IF;
+END $$;
 
 -- Create indexes for gift_spec
 CREATE INDEX IF NOT EXISTS idx_gift_day ON gift_spec(day);
@@ -343,6 +387,10 @@ INSERT INTO system_config (key, value, description, updated_by) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- Functions for common operations
+
+-- Drop existing functions if they exist (to allow recreation with updated signatures)
+DROP FUNCTION IF EXISTS close_day(DATE);
+DROP FUNCTION IF EXISTS snapshot_holders(DATE);
 
 -- Function to close a day
 CREATE OR REPLACE FUNCTION close_day(target_date DATE)

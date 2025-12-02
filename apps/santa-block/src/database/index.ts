@@ -157,6 +157,9 @@ export interface GiftSpec {
   distribution_source?: string;
   notes?: string;
   hash: string;
+  salt?: string;
+  leaf?: string;
+  proof?: string[];
 }
 
 export interface GiftExec {
@@ -332,10 +335,10 @@ export const dayPoolRepo = {
 export const giftSpecRepo = {
   async insert(gift: GiftSpec): Promise<string> {
     const result = await db.query<{ id: string }>(
-      `INSERT INTO gift_spec (day, type, hint, sub_hint, params, distribution_source, notes, hash)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO gift_spec (day, type, hint, sub_hint, params, distribution_source, notes, hash, salt, leaf, proof)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING id`,
-      [gift.day, gift.type, gift.hint, gift.sub_hint, gift.params, gift.distribution_source, gift.notes, gift.hash]
+      [gift.day, gift.type, gift.hint, gift.sub_hint, gift.params, gift.distribution_source, gift.notes, gift.hash, gift.salt, gift.leaf, JSON.stringify(gift.proof)]
     );
     return result.rows[0].id;
   },
