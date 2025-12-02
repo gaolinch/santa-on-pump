@@ -102,8 +102,8 @@ Before December 1st, we **lock in all 24 gifts** using a **Merkle tree** — a c
 ### 4.3 Verification Example
 
 ```
-Published Merkle Root (Nov 27, 2025):
-b1d22ed5c20ad74da7bce68251264b9b055ab27d22f5e3b223614c80e56d5793
+Published Merkle Root (Dec 2, 2025):
+b073cd878a3d0a42ae27fafbb4f574bfb059fdf0d58be63e98b8d84c5d64614a
 
 Day 1 Reveal (Dec 1):
 - Gift: { type: "proportional_holders", params: {...} }
@@ -212,7 +212,7 @@ Just 24 days of rewards, chaos, charity, and community.
 ---
 
 **Merkle Root Commitment (Season 2025):**  
-`b1d22ed5c20ad74da7bce68251264b9b055ab27d22f5e3b223614c80e56d5793`
+`b073cd878a3d0a42ae27fafbb4f574bfb059fdf0d58be63e98b8d84c5d64614a`
 
-**Published:** November 27, 2025
+**Published:** December 2, 2025
 **Verification:** https://santa-pump.fun/verify
