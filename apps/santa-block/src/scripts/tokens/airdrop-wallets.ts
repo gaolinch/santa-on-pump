@@ -13,7 +13,7 @@ import {
   getAccount
 } from '@solana/spl-token';
 import { config } from '../../config';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Transaction } from '@solana/web3.js';

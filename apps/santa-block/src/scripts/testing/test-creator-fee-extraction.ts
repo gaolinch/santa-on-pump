@@ -12,8 +12,8 @@
  *   npx tsx src/scripts/test-creator-fee-extraction.ts <signature>
  */
 
-import { solanaService } from '../services/solana.js';
-import { logger } from '../utils/logger.js';
+import { solanaService } from '../../services/solana';
+import { logger } from '../../utils/logger';
 
 async function testCreatorFeeExtraction(signature: string) {
   console.log('\n' + '='.repeat(80));

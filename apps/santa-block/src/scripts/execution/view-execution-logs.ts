@@ -12,7 +12,7 @@
  */
 
 import { db, giftExecutionLogRepo, giftExecutionSummaryRepo } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 interface ViewOptions {
   day?: number;

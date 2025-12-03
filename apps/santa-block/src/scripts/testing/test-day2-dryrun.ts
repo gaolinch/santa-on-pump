@@ -16,9 +16,9 @@
  *   npm run test:day2-dryrun -- --buyers 20 --treasury 5000000000
  */
 
-import { giftEngine } from '../services/gifts';
+import { giftEngine } from '../../services/gifts';
 import { giftSpecRepo, TxRaw } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 interface DryRunOptions {
   buyers?: number;

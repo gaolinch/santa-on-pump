@@ -16,9 +16,9 @@
  *   npm run insert-tx hFASB4vGKEeZhfbk9RnLErP2f1BcR9oPUWt9fTtpZsHPXVjWh51aPunEpgMhqHDgybXiR5ApdxqhiGJB19Z8DAs
  */
 
-import { solanaService } from '../services/solana';
+import { solanaService } from '../../services/solana';
 import { txRawRepo } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 interface InsertResult {
   success: boolean;

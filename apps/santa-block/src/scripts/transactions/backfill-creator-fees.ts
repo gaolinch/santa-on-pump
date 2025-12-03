@@ -6,9 +6,9 @@
  * and updates them with the correct creator fee extracted from the blockchain.
  */
 
-import { solanaService } from '../services/solana';
+import { solanaService } from '../../services/solana';
 import { db } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 interface BackfillStats {
   total: number;

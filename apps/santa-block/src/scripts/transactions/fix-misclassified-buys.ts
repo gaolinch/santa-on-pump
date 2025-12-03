@@ -13,9 +13,9 @@
  * - When bonding curve balance INCREASES = SELL (tokens coming in from sellers)
  */
 
-import { solanaService } from '../services/solana';
+import { solanaService } from '../../services/solana';
 import { db } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 interface FixResult {
   signature: string;

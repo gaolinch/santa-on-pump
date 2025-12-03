@@ -22,9 +22,9 @@ import {
 import * as bs58 from 'bs58';
 import * as readline from 'readline';
 import { config } from '../../config';
-import { solanaService } from '../services/solana';
+import { solanaService } from '../../services/solana';
 import { giftExecRepo } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 interface Winner {
   wallet: string;

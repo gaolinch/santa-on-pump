@@ -14,7 +14,7 @@
  */
 
 import { db, dayPoolRepo, holderSnapshotRepo, txRawRepo } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 interface CloseDayOptions {
   date?: string; // YYYY-MM-DD format (optional - will use latest block date if not provided)

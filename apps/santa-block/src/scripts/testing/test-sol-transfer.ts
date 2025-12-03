@@ -18,8 +18,8 @@ import {
   LAMPORTS_PER_SOL
 } from '@solana/web3.js';
 import { config } from '../../config';
-import { logger } from '../utils/logger';
-import { solanaService } from '../services/solana';
+import { logger } from '../../utils/logger';
+import { solanaService } from '../../services/solana';
 import bs58 from 'bs58';
 
 interface TransferOptions {

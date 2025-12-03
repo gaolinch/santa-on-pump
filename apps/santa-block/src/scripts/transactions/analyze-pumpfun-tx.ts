@@ -3,9 +3,9 @@
  * Analyze a specific Pump.fun transaction to understand buy/sell detection
  */
 import { Connection, PublicKey } from '@solana/web3.js';
-import { config } from '../config/index.js';
-import { solanaService } from '../services/solana.js';
-import { logger } from '../utils/logger.js';
+import { config } from '../../config/index';
+import { solanaService } from '../../services/solana';
+import { logger } from '../../utils/logger';
 
 async function analyzePumpFunTransaction(signature: string) {
   console.log('\n='.repeat(80));

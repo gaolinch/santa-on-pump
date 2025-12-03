@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { db, giftSpecRepo } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 import * as fs from 'fs';
 import * as path from 'path';
 

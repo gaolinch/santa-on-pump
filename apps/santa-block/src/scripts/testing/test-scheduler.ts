@@ -8,8 +8,8 @@
  * - Status reporting
  */
 
-import { giftLogger } from '../services/gift-logger';
-import { logger } from '../utils/logger';
+import { giftLogger } from '../../services/gift-logger';
+import { logger } from '../../utils/logger';
 
 async function testSchedulerAndLogger() {
   logger.info('=== Testing Scheduler & Logger Implementation ===');

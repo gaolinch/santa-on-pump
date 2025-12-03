@@ -6,8 +6,8 @@
  * Analyzes a transaction to understand why it's being classified as buy/sell
  */
 
-import { solanaService } from '../services/solana';
-import { logger } from '../utils/logger';
+import { solanaService } from '../../services/solana';
+import { logger } from '../../utils/logger';
 
 async function debugTransaction(signature: string) {
   console.log('\n═══════════════════════════════════════════════════════════════');

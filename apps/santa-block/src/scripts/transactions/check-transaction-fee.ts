@@ -2,8 +2,8 @@
 /**
  * Check a specific transaction's network fee
  */
-import { db } from '../database/index.js';
-import { solanaService } from '../services/solana.js';
+import { db } from '../../database/index';
+import { solanaService } from '../../services/solana';
 
 const signature = process.argv[2] || '5hM5QfkaQqGAJigxNhRnpVy8GKZd62UMr6RPRJMFy7aowxhDL9Gf2suN9AHnym4hTkQN8M32jZybSPu4uqjeAZoc';
 

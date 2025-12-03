@@ -12,10 +12,10 @@
 import { Connection, Keypair, Transaction, sendAndConfirmTransaction, SystemProgram, PublicKey } from '@solana/web3.js';
 import * as bs58 from 'bs58';
 import { config } from '../../config';
-import { solanaService } from '../services/solana';
-import { transactionBuilder } from '../services/transaction-builder';
+import { solanaService } from '../../services/solana';
+import { transactionBuilder } from '../../services/transaction-builder';
 import { db, giftExecRepo, giftSpecRepo } from '../../database';
-import { Winner } from '../services/gifts';
+import { Winner } from '../../services/gifts';
 
 interface TransactionInfo {
   index: number;

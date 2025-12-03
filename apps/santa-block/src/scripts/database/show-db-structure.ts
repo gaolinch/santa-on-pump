@@ -2,7 +2,7 @@
 /**
  * Show database structure for tx_raw table
  */
-import { db } from '../database/index.js';
+import { db } from '../../database/index';
 
 async function showDbStructure() {
   console.log('\n' + '='.repeat(80));

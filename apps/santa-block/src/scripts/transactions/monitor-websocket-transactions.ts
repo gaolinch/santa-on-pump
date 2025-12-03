@@ -10,10 +10,10 @@
  *   npx tsx src/scripts/monitor-websocket-transactions.ts
  */
 
-import '../config/index.js';
+import '../config/index';
 import WebSocket from 'ws';
-import { config } from '../config/index.js';
-import { solanaService } from '../services/solana.js';
+import { config } from '../../config/index';
+import { solanaService } from '../../services/solana';
 import util from 'util';
 
 // Colors for terminal output

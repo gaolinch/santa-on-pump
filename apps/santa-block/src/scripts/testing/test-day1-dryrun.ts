@@ -17,9 +17,9 @@
  *   npm run test:day1-dryrun -- --holders 100 --treasury 10000000000
  */
 
-import { giftEngine } from '../services/gifts';
+import { giftEngine } from '../../services/gifts';
 import { giftSpecRepo, HolderSnapshot } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 interface DryRunOptions {
   holders?: number;

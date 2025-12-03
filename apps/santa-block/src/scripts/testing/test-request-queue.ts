@@ -5,9 +5,9 @@
  * Simulates multiple concurrent transaction fetches to verify queueing works
  */
 
-import { solanaService } from '../services/solana.js';
-import { logger } from '../utils/logger.js';
-import { config } from '../config/index.js';
+import { solanaService } from '../../services/solana';
+import { logger } from '../../utils/logger';
+import { config } from '../../config/index';
 
 async function testRequestQueue() {
   console.log('\n' + '='.repeat(80));

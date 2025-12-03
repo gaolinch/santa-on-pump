@@ -1,6 +1,6 @@
-import { solanaService } from '../services/solana';
+import { solanaService } from '../../services/solana';
 import { config } from '../../config';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 import { txRawRepo } from '../../database';
 
 /**

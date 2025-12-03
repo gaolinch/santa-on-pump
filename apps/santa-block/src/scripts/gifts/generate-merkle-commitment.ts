@@ -17,7 +17,7 @@ import {
   generateSaltsForAllGifts,
   generateProofForDay,
   MerkleTreeResult
-} from '../utils/merkle';
+} from '../../utils/merkle';
 
 interface Gift {
   day: number;

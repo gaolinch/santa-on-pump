@@ -18,8 +18,8 @@ import {
 import * as bs58 from 'bs58';
 import * as readline from 'readline';
 import { config } from '../../config';
-import { solanaService } from '../services/solana';
-import { logger } from '../utils/logger';
+import { solanaService } from '../../services/solana';
+import { logger } from '../../utils/logger';
 
 /**
  * Get user confirmation

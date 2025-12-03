@@ -10,8 +10,8 @@
  *   npm run test:twitter -- --day 1         # Test with specific day
  */
 
-import { twitterService } from '../services/twitter-service';
-import { logger } from '../utils/logger';
+import { twitterService } from '../../services/twitter-service';
+import { logger } from '../../utils/logger';
 import { config } from '../../config';
 
 interface TestOptions {

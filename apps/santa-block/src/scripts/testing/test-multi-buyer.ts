@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
 import { db } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 async function test() {
   const signature = 'ndqWzRpmqPUfC8jKkM554yad1Tn4xvXEArgyF5xUjeDpF1HQg1fJtEJQNwrJNLHmMS3JVzwfK5BccuxUxqNJDEs';

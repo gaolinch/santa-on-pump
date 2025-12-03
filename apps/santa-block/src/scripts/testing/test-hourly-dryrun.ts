@@ -11,8 +11,8 @@
  *   npm run test:hourly-dryrun -- --day 1 --hour 14
  */
 
-import { hourlyProcessor } from '../services/hourly-processor';
-import { logger } from '../utils/logger';
+import { hourlyProcessor } from '../../services/hourly-processor';
+import { logger } from '../../utils/logger';
 
 interface TestOptions {
   day?: number;

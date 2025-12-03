@@ -1,4 +1,4 @@
-import { solanaService } from '../services/solana';
+import { solanaService } from '../../services/solana';
 
 async function analyzeTxAccounts() {
   const knownBuyTx = '3y3fdrhVmrMmLKwnQZ6CCiUVuDqc2K3o1qFjZmyLAFxxt8vcqyvg2izCeBx1ydig1x5w6yQYeuqzjEQ4TKRVuYdg';

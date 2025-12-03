@@ -7,10 +7,10 @@
  *   npm run backfill:date -- --day 2
  */
 
-import { transactionListener } from '../services/listener';
+import { transactionListener } from '../../services/listener';
 import { db } from '../../database';
-import { logger } from '../utils/logger';
-import { getAdventDay } from '../utils/date';
+import { logger } from '../../utils/logger';
+import { getAdventDay } from '../../utils/date';
 
 interface BackfillOptions {
   date?: string; // YYYY-MM-DD format

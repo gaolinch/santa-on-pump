@@ -15,10 +15,10 @@
  * If no signature provided, shows details for the most recent transaction
  */
 
-import '../config/index.js';
-import { db, txRawRepo } from '../database/index.js';
-import { solanaService } from '../services/solana.js';
-import { logger } from '../utils/logger.js';
+import '../config/index';
+import { db, txRawRepo } from '../../database/index';
+import { solanaService } from '../../services/solana';
+import { logger } from '../../utils/logger';
 
 function formatNumber(value: bigint | number | string | null | undefined, decimals: number = 9): string {
   if (value === null || value === undefined) return 'N/A';

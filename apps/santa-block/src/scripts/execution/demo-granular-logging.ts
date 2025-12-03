@@ -6,10 +6,10 @@
  * with step-by-step granular details
  */
 
-import { giftEngine } from '../services/gifts';
-import { giftLogger } from '../services/gift-logger';
+import { giftEngine } from '../../services/gifts';
+import { giftLogger } from '../../services/gift-logger';
 import { giftSpecRepo, HolderSnapshot, giftExecutionLogRepo, giftExecutionSummaryRepo, db } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 async function demoGranularLogging() {
   console.log('\n╔════════════════════════════════════════════════════════╗');

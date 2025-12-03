@@ -17,8 +17,8 @@
  *   npm run test:logger -- --scenario skip
  */
 
-import { giftLogger } from '../services/gift-logger';
-import { logger } from '../utils/logger';
+import { giftLogger } from '../../services/gift-logger';
+import { logger } from '../../utils/logger';
 import { auditLogRepo } from '../../database';
 
 interface TestScenario {

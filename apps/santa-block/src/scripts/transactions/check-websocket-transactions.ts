@@ -2,8 +2,8 @@
 /**
  * Check transactions captured via WebSocket
  */
-import { db } from '../database/index.js';
-import { logger } from '../utils/logger.js';
+import { db } from '../../database/index';
+import { logger } from '../../utils/logger';
 
 async function checkWebSocketTransactions() {
   console.log('\n' + '='.repeat(80));

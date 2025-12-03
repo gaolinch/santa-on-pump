@@ -7,8 +7,8 @@
  *   npx tsx src/scripts/show-helius-transaction.ts <signature>
  */
 
-import '../config/index.js';
-import { solanaService } from '../services/solana.js';
+import '../config/index';
+import { solanaService } from '../../services/solana';
 import util from 'util';
 
 async function main() {

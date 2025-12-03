@@ -2,10 +2,10 @@
 /**
  * Test WebSocket capture - Listen for a few seconds and verify data is saved
  */
-import { config } from '../config/index.js';
-import { websocketListener } from '../services/websocket-listener.js';
-import { db } from '../database/index.js';
-import { logger } from '../utils/logger.js';
+import { config } from '../../config/index';
+import { websocketListener } from '../../services/websocket-listener';
+import { db } from '../../database/index';
+import { logger } from '../../utils/logger';
 
 async function testWebSocketCapture() {
   console.log('\n' + '='.repeat(80));

@@ -15,8 +15,8 @@
  * For testing without side effects, use: npm run test:hourly-dryrun
  */
 
-import { hourlyProcessor } from '../services/hourly-processor';
-import { logger } from '../utils/logger';
+import { hourlyProcessor } from '../../services/hourly-processor';
+import { logger } from '../../utils/logger';
 import { db } from '../../database';
 
 async function manualHourlyAirdrop() {

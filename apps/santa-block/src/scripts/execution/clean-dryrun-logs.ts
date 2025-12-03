@@ -11,7 +11,7 @@
  */
 
 import { db, giftExecRepo, giftExecutionSummaryRepo, giftExecutionLogRepo } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 interface CleanOptions {
   day: number;

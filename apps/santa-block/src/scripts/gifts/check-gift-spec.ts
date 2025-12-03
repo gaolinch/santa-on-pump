@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { giftSpecRepo } from '../../database';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 async function checkGiftSpec() {
   console.log('Checking gift spec for Day 1...\n');

@@ -8,7 +8,7 @@
  */
 
 import { db } from '../../database';
-import { getAdventDay } from '../utils/date';
+import { getAdventDay } from '../../utils/date';
 
 interface CheckOptions {
   date?: string; // YYYY-MM-DD format

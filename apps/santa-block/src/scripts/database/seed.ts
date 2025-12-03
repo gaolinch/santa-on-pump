@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 
 import { ngoWalletRepo, auditLogRepo } from '../../database';
-import { commitRevealService } from '../services/commit-reveal';
-import { logger } from '../utils/logger';
+import { commitRevealService } from '../../services/commit-reveal';
+import { logger } from '../../utils/logger';
 
 /**
  * Seed database with initial data

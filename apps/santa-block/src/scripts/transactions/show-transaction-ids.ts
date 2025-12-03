@@ -2,7 +2,7 @@
 /**
  * Show transaction IDs (signatures) saved in database
  */
-import { db } from '../database/index.js';
+import { db } from '../../database/index';
 
 async function showTransactionIds() {
   console.log('\n' + '='.repeat(80));

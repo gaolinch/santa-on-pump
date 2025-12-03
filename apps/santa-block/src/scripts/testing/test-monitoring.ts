@@ -1,4 +1,4 @@
-import { solanaService } from '../services/solana';
+import { solanaService } from '../../services/solana';
 import { config } from '../../config';
 
 async function testMonitoring() {

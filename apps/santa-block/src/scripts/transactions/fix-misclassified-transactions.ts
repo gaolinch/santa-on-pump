@@ -4,10 +4,10 @@
  * This script identifies transactions that were incorrectly classified as BUY when they should be SELL
  * and updates them in the database.
  */
-import { config } from '../config/index.js';
-import { db, txRawRepo } from '../database/index.js';
-import { solanaService } from '../services/solana.js';
-import { logger } from '../utils/logger.js';
+import { config } from '../../config/index';
+import { db, txRawRepo } from '../../database/index';
+import { solanaService } from '../../services/solana';
+import { logger } from '../../utils/logger';
 
 async function fixMisclassifiedTransactions() {
   console.log('\n='.repeat(80));
