@@ -15,12 +15,14 @@ async function createHourlyTable() {
         distributed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         blockhash TEXT,
         trace_id TEXT,
+        tx_signature TEXT,
         UNIQUE(day, hour)
     );
 
     CREATE INDEX IF NOT EXISTS idx_hourly_day ON gift_hourly_airdrops(day);
     CREATE INDEX IF NOT EXISTS idx_hourly_wallet ON gift_hourly_airdrops(wallet);
     CREATE INDEX IF NOT EXISTS idx_hourly_day_hour ON gift_hourly_airdrops(day, hour);
+    CREATE INDEX IF NOT EXISTS idx_hourly_tx_signature ON gift_hourly_airdrops(tx_signature) WHERE tx_signature IS NOT NULL;
   `;
 
   try {

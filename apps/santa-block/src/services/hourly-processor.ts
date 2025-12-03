@@ -28,10 +28,11 @@ export interface HourlyAirdropConfig {
 export interface HourlyAirdropResult {
   day: number;
   hour: number;
-  winner: string;
-  amount: number;
+  winner?: string; // Single winner (for backward compatibility)
+  winners?: Array<{ wallet: string; amount: number; txSignature?: string }>; // Multiple recipients
+  amount?: number; // Single amount (for backward compatibility)
   blockhash: string;
-  txSignature?: string;
+  txSignature?: string; // Single signature (for backward compatibility)
   timestamp: Date;
   skipped?: boolean;
   skipReason?: string;
@@ -50,6 +51,17 @@ export interface EligibleParticipant {
   wallet: string;
   balance?: bigint;
   buyVolume?: bigint;
+}
+
+export interface ManualAirdropRecipient {
+  wallet: string;
+  amount: number; // Amount in tokens (will be converted to base units)
+}
+
+export interface ProcessHourlyAirdropOptions {
+  day?: number;
+  hour?: number;
+  manualRecipients?: ManualAirdropRecipient[]; // If provided, skip selection and use this list
 }
 
 export class HourlyProcessor {
@@ -264,29 +276,42 @@ export class HourlyProcessor {
    * - 02:00 → Process hour 1 (01:00-01:59)
    * - 00:00 (Day 2) → Process hour 23 (23:00-23:59) of Day 1
    */
-  async processHourlyAirdrop(): Promise<HourlyAirdropResult | null> {
-    const now = new Date();
-    const currentHour = now.getUTCHours();
-    const currentDay = this.getCurrentAdventDay();
+  async processHourlyAirdrop(options?: ProcessHourlyAirdropOptions): Promise<HourlyAirdropResult | null> {
+    const { day, hour, manualRecipients } = options || {};
+    
+    // Determine target day and hour
+    let targetDay: number;
+    let targetHour: number;
+    
+    if (day !== undefined && hour !== undefined) {
+      // Use provided day/hour
+      targetDay = day;
+      targetHour = hour;
+    } else {
+      // Auto-detect from current time
+      const now = new Date();
+      const currentHour = now.getUTCHours();
+      const currentDay = this.getCurrentAdventDay();
 
-    if (!currentDay) {
-      logger.debug('Not in advent season, skipping hourly airdrop');
-      return null;
-    }
-
-    // Determine which hour to process (previous hour)
-    let targetDay = currentDay;
-    let targetHour = currentHour - 1;
-
-    // Special case: At 00:00, process hour 23 of previous day
-    if (currentHour === 0) {
-      if (currentDay === 1) {
-        // Day 1 at 00:00: no previous hour exists
-        logger.debug('Day 1 hour 0: no previous hour to process');
+      if (!currentDay) {
+        logger.debug('Not in advent season, skipping hourly airdrop');
         return null;
       }
-      targetDay = currentDay - 1;
-      targetHour = 23;
+
+      // Determine which hour to process (previous hour)
+      targetDay = currentDay;
+      targetHour = currentHour - 1;
+
+      // Special case: At 00:00, process hour 23 of previous day
+      if (currentHour === 0) {
+        if (currentDay === 1) {
+          // Day 1 at 00:00: no previous hour exists
+          logger.debug('Day 1 hour 0: no previous hour to process');
+          return null;
+        }
+        targetDay = currentDay - 1;
+        targetHour = 23;
+      }
     }
 
     const traceId = `hourly-${targetDay}-${targetHour}-${Date.now()}`;
@@ -294,126 +319,378 @@ export class HourlyProcessor {
       day: targetDay,
       giftType: 'hourly_airdrop',
       phase: 'hourly_distribution',
-      metadata: { hour: targetHour },
+      metadata: { hour: targetHour, manual: !!manualRecipients },
+    });
+
+    // Start execution logging (like gifts)
+    giftLogger.startExecution(targetDay, 'hourly_airdrop', {
+      hour: targetHour,
+      manual: !!manualRecipients,
+      recipientCount: manualRecipients?.length || 0,
     });
 
     try {
+      await giftLogger.logStep(
+        targetDay,
+        'hourly_airdrop',
+        'start',
+        `Starting hourly airdrop processing for day ${targetDay}, hour ${targetHour}`,
+        { day: targetDay, hour: targetHour, manual: !!manualRecipients }
+      );
+
       hourlyLogger.info('Starting hourly airdrop processing', {
         day: targetDay,
         hour: targetHour,
+        manual: !!manualRecipients,
       });
 
-      // 1. Check if this day has hourly airdrops
-      const giftSpec = await giftSpecRepo.findByDay(targetDay);
-      if (!giftSpec) {
-        hourlyLogger.debug('No gift spec found for day', { day: targetDay });
-        return null;
-      }
-
-      const airdropConfig = this.getAirdropConfig(giftSpec.params);
-      if (!airdropConfig.enabled) {
-        hourlyLogger.debug('Day does not have hourly airdrops', { day: targetDay });
-        return null;
-      }
-
-      // 2. Check if this hour already distributed
-      const alreadyDistributed = await this.isHourAlreadyDistributed(targetDay, targetHour);
-      if (alreadyDistributed) {
-        hourlyLogger.info('Hourly airdrop already distributed', {
-          day: targetDay,
-          hour: targetHour,
-        });
-        return null;
-      }
-
-      // 3. Get eligible participants (buyers from target hour)
-      const eligibleParticipants = await this.getEligibleParticipants(targetDay, targetHour);
-      
-      if (eligibleParticipants.length === 0) {
-        hourlyLogger.info('No eligible participants for hourly airdrop', {
-          day: targetDay,
-          hour: targetHour,
-        });
-        
-        // Record in audit log
-        await auditLogRepo.insert({
-          ts: new Date(),
-          actor: 'system',
-          action: 'hourly_airdrop_skipped',
-          payload: {
-            day: targetDay,
-            hour: targetHour,
-            reason: 'no_eligible_participants',
-            eligibleCount: 0,
-          },
-          resource_type: 'hourly_airdrop',
-          resource_id: `${targetDay}-${targetHour}`,
-        });
-        
-        return null;
-      }
-
-      hourlyLogger.info('Eligible participants loaded', {
-        count: eligibleParticipants.length,
-      });
-
-      // 4. Select winner using deterministic RNG
+      // Get blockhash for logging
       const slot = await solanaService.getCurrentSlot();
       const blockhash = await solanaService.getBlockhashForSlot(slot) || 'fallback-blockhash-' + Date.now();
-      const seed = generateRandomSeed(blockhash, `day${targetDay}-hour${targetHour}-${config.gifts.salt}`);
-      const shuffled = deterministicShuffle(eligibleParticipants, seed);
-      const winner = shuffled[0];
 
-      hourlyLogger.info('Winner selected', {
-        winner: winner.wallet,
-        hour: targetHour,
-      });
+      let recipients: Array<{ wallet: string; amount: number }> = [];
 
-      // 5. Calculate airdrop amount
-      const amountPerWinner = Math.floor(airdropConfig.totalAmount / airdropConfig.winners);
+      // If manual recipients provided, use them (skip selection)
+      if (manualRecipients && manualRecipients.length > 0) {
+        await giftLogger.logStep(
+          targetDay,
+          'hourly_airdrop',
+          'manual_recipients',
+          `Using manual recipients list (${manualRecipients.length} recipients)`,
+          { recipientCount: manualRecipients.length }
+        );
 
-      // 6. Record distribution (before transfer for safety)
-      await this.recordHourlyDistribution(
+        hourlyLogger.info('Using manual recipients list', {
+          count: manualRecipients.length,
+        });
+
+        // Get actual token decimals from blockchain or config
+        let tokenDecimals = config.solana.pumpFunDecimals || config.santa.decimals || 9;
+        try {
+          const tokenMintAddress = config.solana.pumpFunToken || config.santa.tokenMint;
+          if (tokenMintAddress) {
+            const { PublicKey } = await import('@solana/web3.js');
+            const tokenMint = new PublicKey(tokenMintAddress);
+            const connection = await solanaService.getConnection();
+            const mintInfo = await connection.getParsedAccountInfo(tokenMint);
+            if (mintInfo.value && 'parsed' in mintInfo.value.data) {
+              const parsedData = mintInfo.value.data as any;
+              if (parsedData.parsed?.info?.decimals !== undefined) {
+                tokenDecimals = parsedData.parsed.info.decimals;
+                hourlyLogger.info({
+                  decimals: tokenDecimals,
+                  source: 'blockchain',
+                }, 'Detected token decimals from blockchain');
+              }
+            }
+          }
+        } catch (error: any) {
+          hourlyLogger.warn({
+            error: error.message,
+            decimals: tokenDecimals,
+            source: 'config',
+          }, 'Could not fetch decimals from blockchain, using config value');
+        }
+
+        // Convert token amounts to base units using actual token decimals
+        recipients = manualRecipients.map(r => ({
+          wallet: r.wallet,
+          amount: Math.floor(r.amount * (10 ** tokenDecimals)), // Convert to base units
+        }));
+        
+        hourlyLogger.info({
+          tokenDecimals,
+          exampleAmount: manualRecipients[0]?.amount,
+          exampleBaseUnits: recipients[0]?.amount,
+        }, 'Converted token amounts to base units');
+      } else {
+        // Normal flow: check config and select winners
+        // 1. Check if this day has hourly airdrops
+        const giftSpec = await giftSpecRepo.findByDay(targetDay);
+        if (!giftSpec) {
+          await giftLogger.logStep(
+            targetDay,
+            'hourly_airdrop',
+            'check_config',
+            'No gift spec found for day',
+            { day: targetDay },
+            'warn'
+          );
+          hourlyLogger.debug('No gift spec found for day', { day: targetDay });
+          await giftLogger.failExecution(targetDay, new Error('No gift spec found'), { day: targetDay });
+          return null;
+        }
+
+        const airdropConfig = this.getAirdropConfig(giftSpec.params);
+        if (!airdropConfig.enabled) {
+          await giftLogger.logStep(
+            targetDay,
+            'hourly_airdrop',
+            'check_config',
+            'Day does not have hourly airdrops enabled',
+            { day: targetDay },
+            'warn'
+          );
+          hourlyLogger.debug('Day does not have hourly airdrops', { day: targetDay });
+          await giftLogger.failExecution(targetDay, new Error('Hourly airdrops not enabled'), { day: targetDay });
+          return null;
+        }
+
+        await giftLogger.logStep(
+          targetDay,
+          'hourly_airdrop',
+          'check_config',
+          'Airdrop configuration loaded',
+          { 
+            enabled: airdropConfig.enabled,
+            totalAmount: airdropConfig.totalAmount,
+            winners: airdropConfig.winners,
+          }
+        );
+
+        // 2. Check if this hour already distributed (skip for manual recipients)
+        if (!manualRecipients) {
+          const alreadyDistributed = await this.isHourAlreadyDistributed(targetDay, targetHour);
+          if (alreadyDistributed) {
+            await giftLogger.logStep(
+              targetDay,
+              'hourly_airdrop',
+              'check_distributed',
+              'Hourly airdrop already distributed',
+              { day: targetDay, hour: targetHour },
+              'warn'
+            );
+            hourlyLogger.info('Hourly airdrop already distributed', {
+              day: targetDay,
+              hour: targetHour,
+            });
+            await giftLogger.skipExecution(targetDay, 'Already distributed');
+            return null;
+          }
+        }
+
+        // 3. Get eligible participants (buyers from target hour)
+        await giftLogger.logStep(
+          targetDay,
+          'hourly_airdrop',
+          'get_participants',
+          'Loading eligible participants',
+          { day: targetDay, hour: targetHour }
+        );
+
+        const eligibleParticipants = await this.getEligibleParticipants(targetDay, targetHour);
+        
+        if (eligibleParticipants.length === 0) {
+          await giftLogger.logStep(
+            targetDay,
+            'hourly_airdrop',
+            'get_participants',
+            'No eligible participants found',
+            { day: targetDay, hour: targetHour },
+            'warn'
+          );
+          
+          hourlyLogger.info('No eligible participants for hourly airdrop', {
+            day: targetDay,
+            hour: targetHour,
+          });
+          
+          // Record in audit log
+          await auditLogRepo.insert({
+            ts: new Date(),
+            actor: 'system',
+            action: 'hourly_airdrop_skipped',
+            payload: {
+              day: targetDay,
+              hour: targetHour,
+              reason: 'no_eligible_participants',
+              eligibleCount: 0,
+            },
+            resource_type: 'hourly_airdrop',
+            resource_id: `${targetDay}-${targetHour}`,
+          });
+          
+          await giftLogger.skipExecution(targetDay, 'No eligible participants');
+          return null;
+        }
+
+        await giftLogger.logStep(
+          targetDay,
+          'hourly_airdrop',
+          'get_participants',
+          `Found ${eligibleParticipants.length} eligible participants`,
+          { eligibleCount: eligibleParticipants.length }
+        );
+
+        hourlyLogger.info('Eligible participants loaded', {
+          count: eligibleParticipants.length,
+        });
+
+        // 4. Select winner using deterministic RNG
+        await giftLogger.logStep(
+          targetDay,
+          'hourly_airdrop',
+          'select_winner',
+          'Selecting winner using deterministic RNG',
+          { blockhash: blockhash.substring(0, 20) + '...' }
+        );
+
+        const seed = generateRandomSeed(blockhash, `day${targetDay}-hour${targetHour}-${config.gifts.salt}`);
+        const shuffled = deterministicShuffle(eligibleParticipants, seed);
+        const winner = shuffled[0];
+
+        await giftLogger.logStep(
+          targetDay,
+          'hourly_airdrop',
+          'select_winner',
+          `Winner selected: ${winner.wallet}`,
+          { winner: winner.wallet }
+        );
+
+        hourlyLogger.info('Winner selected', {
+          winner: winner.wallet,
+          hour: targetHour,
+        });
+
+        // 5. Calculate airdrop amount
+        const amountPerWinner = Math.floor(airdropConfig.totalAmount / airdropConfig.winners);
+        
+        recipients = [{
+          wallet: winner.wallet,
+          amount: amountPerWinner,
+        }];
+      }
+
+      // Process all recipients
+      await giftLogger.logStep(
         targetDay,
-        targetHour,
-        winner.wallet,
-        amountPerWinner,
-        blockhash,
-        traceId
+        'hourly_airdrop',
+        'process_recipients',
+        `Processing ${recipients.length} recipient(s)`,
+        { recipientCount: recipients.length }
       );
 
-      // 7. Execute token transfer (if enabled)
-      let txSignature: string | undefined;
-      if (config.env === 'production') {
+      const winners: Array<{ wallet: string; amount: number; txSignature?: string }> = [];
+      let totalDistributed = BigInt(0);
+
+      for (let i = 0; i < recipients.length; i++) {
+        const recipient = recipients[i];
+        // For manual recipients, use sequential hours to avoid unique constraint conflicts
+        // For normal flow, all use the same hour
+        // Ensure hour doesn't exceed 23 (wrap around if needed)
+        const recipientHour = manualRecipients ? Math.min(targetHour + i, 23) : targetHour;
+        
+        await giftLogger.logStep(
+          targetDay,
+          'hourly_airdrop',
+          'record_distribution',
+          `Recording distribution for ${recipient.wallet}`,
+          { 
+            wallet: recipient.wallet,
+            amount: recipient.amount,
+            index: i + 1,
+            total: recipients.length,
+          }
+        );
+
+        // Record distribution (before transfer for safety)
+        await this.recordHourlyDistribution(
+          targetDay,
+          recipientHour,
+          recipient.wallet,
+          recipient.amount,
+          blockhash,
+          traceId
+        );
+
+        // Execute token transfer (always call transferTokens - it handles dry run mode internally)
+        let txSignature: string | undefined;
         try {
-          txSignature = await this.transferTokens(winner.wallet, amountPerWinner);
+          await giftLogger.logStep(
+            targetDay,
+            'hourly_airdrop',
+            'transfer_tokens',
+            `Transferring ${recipient.amount} tokens to ${recipient.wallet}`,
+            { wallet: recipient.wallet, amount: recipient.amount }
+          );
+
+          txSignature = await this.transferTokens(recipient.wallet, recipient.amount);
+          
+          await giftLogger.logStep(
+            targetDay,
+            'hourly_airdrop',
+            'transfer_tokens',
+            `Tokens transferred successfully${config.santa.transferMode === 'dryrun' ? ' (DRY RUN)' : ''}`,
+            { 
+              wallet: recipient.wallet,
+              amount: recipient.amount,
+              txSignature,
+              dryRun: config.santa.transferMode === 'dryrun',
+            }
+          );
+
           hourlyLogger.info('Tokens transferred', {
-            winner: winner.wallet,
-            amount: amountPerWinner,
+            winner: recipient.wallet,
+            amount: recipient.amount,
             txSignature,
+            dryRun: config.santa.transferMode === 'dryrun',
           });
+
+          // Update the database record with transaction signature (only if real transfer)
+          if (txSignature && config.santa.transferMode === 'real' && config.env === 'production') {
+            await this.updateHourlyDistributionSignature(targetDay, recipientHour, txSignature);
+          }
         } catch (error) {
+          await giftLogger.logStep(
+            targetDay,
+            'hourly_airdrop',
+            'transfer_tokens',
+            `Token transfer failed: ${(error as Error).message}`,
+            { 
+              wallet: recipient.wallet,
+              amount: recipient.amount,
+              error: (error as Error).message,
+            },
+            'error'
+          );
+
           hourlyLogger.error('Token transfer failed', {
-            winner: winner.wallet,
-            amount: amountPerWinner,
+            winner: recipient.wallet,
+            amount: recipient.amount,
             error: (error as Error).message,
           });
           throw error;
         }
-      } else {
-        hourlyLogger.info('Token transfer skipped (not production)', {
-          winner: winner.wallet,
-          amount: amountPerWinner,
+
+        winners.push({
+          wallet: recipient.wallet,
+          amount: recipient.amount,
+          txSignature,
         });
+
+        totalDistributed += BigInt(recipient.amount);
       }
+
+      await giftLogger.logStep(
+        targetDay,
+        'hourly_airdrop',
+        'complete',
+        `Hourly airdrop completed successfully - ${winners.length} recipient(s)`,
+        { 
+          winnerCount: winners.length,
+          totalDistributed: totalDistributed.toString(),
+        }
+      );
 
       const result: HourlyAirdropResult = {
         day: targetDay,
         hour: targetHour,
-        winner: winner.wallet,
-        amount: amountPerWinner,
+        winners: winners,
+        // Backward compatibility: set winner and amount for single recipient
+        winner: winners.length === 1 ? winners[0].wallet : undefined,
+        amount: winners.length === 1 ? winners[0].amount : undefined,
+        txSignature: winners.length === 1 ? winners[0].txSignature : undefined,
         blockhash,
-        txSignature,
         timestamp: new Date(),
       };
 
@@ -427,15 +704,26 @@ export class HourlyProcessor {
         payload: {
           day: targetDay,
           hour: targetHour,
-          winner: winner.wallet,
-          amount: amountPerWinner,
-          eligibleCount: eligibleParticipants.length,
-          txSignature,
+          winners: winners,
+          winnerCount: winners.length,
+          totalDistributed: totalDistributed.toString(),
           blockhash,
         },
         resource_type: 'hourly_airdrop',
         resource_id: `${targetDay}-${targetHour}`,
       });
+
+      // Complete execution logging (like gifts)
+      await giftLogger.successExecution(
+        targetDay,
+        winners.length,
+        totalDistributed,
+        {
+          hour: targetHour,
+          manual: !!manualRecipients,
+          blockhash,
+        }
+      );
 
       return result;
 
@@ -576,23 +864,50 @@ export class HourlyProcessor {
   }
 
   /**
+   * Update transaction signature for hourly distribution
+   */
+  private async updateHourlyDistributionSignature(
+    day: number,
+    hour: number,
+    txSignature: string
+  ): Promise<void> {
+    await db.query(
+      `UPDATE gift_hourly_airdrops 
+       SET tx_signature = $1
+       WHERE day = $2 AND hour = $3`,
+      [txSignature, day, hour]
+    );
+
+    logger.info('Transaction signature updated', {
+      day,
+      hour,
+      txSignature,
+    });
+  }
+
+  /**
    * Transfer tokens to winner
    */
   private async transferTokens(wallet: string, amount: number): Promise<string> {
-    logger.info('Transferring tokens', { wallet, amount });
+    logger.info('Transferring tokens from airdrop wallet', { wallet, amount });
 
-    // Check if token transfer service is available
-    if (!tokenTransferService.isAvailable()) {
-      throw new Error('Token transfer service not available. Check SANTA_TREASURY_PRIVATE_KEY configuration.');
+    // Check if token transfer service is available (skip check in dry run mode)
+    const transferMode = config.santa.transferMode;
+    const isDryRun = transferMode === 'dryrun';
+    
+    if (!isDryRun && !tokenTransferService.isAvailable()) {
+      throw new Error('Token transfer service not available. Check AIRDROP_WALLET_PRIVATE_KEY configuration.');
     }
 
-    // Validate recipient wallet
-    const isValid = await tokenTransferService.validateRecipient(wallet);
-    if (!isValid) {
-      throw new Error(`Invalid recipient wallet: ${wallet}`);
+    // Validate recipient wallet (skip in dry run mode)
+    if (!isDryRun) {
+      const isValid = await tokenTransferService.validateRecipient(wallet);
+      if (!isValid) {
+        throw new Error(`Invalid recipient wallet: ${wallet}`);
+      }
     }
 
-    // Execute transfer with retries
+    // Execute transfer with retries (works in both dry run and real mode)
     const result = await tokenTransferService.transferTokens(wallet, amount, 3);
 
     if (!result.success) {

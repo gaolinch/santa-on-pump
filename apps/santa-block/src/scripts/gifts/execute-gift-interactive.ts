@@ -341,12 +341,36 @@ async function executeGiftInteractive(options: ExecutionOptions) {
     console.log();
     
     // Get blockhash
-    const lastSlot = await solanaService.getLastSlotForDate(targetDay);
-    const blockhash = lastSlot ? await solanaService.getBlockhashForSlot(lastSlot) : null;
+    // Some gift types require blockhash for deterministic randomness (deterministic_random, scatter_airdrop_blockhash)
+    // Others don't need it (proportional_top_buyers, proportional_holders, etc.)
+    const giftTypesNeedingBlockhash = ['deterministic_random', 'scatter_airdrop_blockhash'];
+    const needsBlockhash = giftTypesNeedingBlockhash.includes(giftSpec.type);
     
-    if (!blockhash) {
-      throw new Error('Failed to get blockhash for day');
+    let blockhash: string;
+    const lastSlot = await solanaService.getLastSlotForDate(targetDay);
+    const fetchedBlockhash = lastSlot ? await solanaService.getBlockhashForSlot(lastSlot) : null;
+    
+    if (!fetchedBlockhash) {
+      if (needsBlockhash) {
+        throw new Error(`Failed to get blockhash for day (required for ${giftSpec.type} gift type)`);
+      } else {
+        // Gift type doesn't need blockhash, use dummy value
+        if (isDryRun) {
+          console.log(`⚠️  Could not fetch blockhash (date may be in future), using dummy value (not used for ${giftSpec.type})`);
+        } else {
+          console.log(`⚠️  Could not fetch blockhash, using dummy value (not used for ${giftSpec.type})`);
+        }
+        blockhash = `dummy-blockhash-not-used-for-${giftSpec.type}-${Date.now()}`;
+      }
+    } else {
+      blockhash = fetchedBlockhash;
+      if (!needsBlockhash) {
+        console.log(`ℹ️  Blockhash fetched (not used for ${giftSpec.type}): ${blockhash.substring(0, 16)}...`);
+      } else {
+        console.log(`✅ Blockhash fetched: ${blockhash.substring(0, 16)}...`);
+      }
     }
+    console.log();
     
     // Step 5: Execute gift rule
     console.log('Step 5: Executing gift rule...');

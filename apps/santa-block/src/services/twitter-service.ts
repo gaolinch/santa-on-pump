@@ -196,15 +196,10 @@ export class TwitterService {
     const solAmount = parseFloat(totalDistributedSOL).toFixed(4).replace(/\.?0+$/, '');
     
     // Build message with emojis and formatting
-    let message = `🎁 Day ${day} Gift Executed! 🎄\n\n`;
+    let message = `🦌🦌🦌 Gift dropped - Day ${day} - Bang 🦌🦌🦌\n\n`;
     message += `✨ ${giftTypeName}\n`;
     message += `🎉 ${winnerCount} ${winnerCount === 1 ? 'holder' : 'holders'} rewarded\n`;
     message += `💰 ${solAmount} SOL distributed\n\n`;
-    
-    if (txHashes && txHashes.length > 0) {
-      const solscanUrl = `https://solscan.io/tx/${txHashes[0]}`;
-      message += `🔗 ${solscanUrl}\n\n`;
-    }
     
     message += `📊 Full details & winners:\n${pageUrl}\n\n`;
     message += `#SantaOnPump #Solana #OnChainAdvent $SANTA`;
