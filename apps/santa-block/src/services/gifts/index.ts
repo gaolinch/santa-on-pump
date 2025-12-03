@@ -27,10 +27,12 @@ export class GiftEngine {
   constructor() {
     // Register all gift handlers
     const ngoGift = new NGODonationGift();
+    const topBuyersGift = new TopBuyersGift();
     
     this.handlers = new Map([
       ['proportional_holders', new ProportionalHoldersGift()],
-      ['top_buyers_airdrop', new TopBuyersGift()],
+      ['top_buyers_airdrop', topBuyersGift],
+      ['proportional_top_buyers', topBuyersGift], // Alias for top_buyers_airdrop
       ['deterministic_random', new DeterministicRandomGift()],
       ['full_donation_to_ngo', ngoGift],
       ['ngo_donation', ngoGift], // Alias for full_donation_to_ngo

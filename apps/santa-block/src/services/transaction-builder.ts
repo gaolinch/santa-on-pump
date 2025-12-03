@@ -137,6 +137,8 @@ export class TransactionBuilder {
   /**
    * Execute signed transactions
    * This would be called after multi-sig approval
+   * 
+   * CRITICAL: Each transaction is sent independently. If one fails, others continue.
    */
   async executeSignedTransactions(
     transactions: Transaction[],
@@ -146,9 +148,17 @@ export class TransactionBuilder {
 
     const connection = await solanaService.getConnection();
     const results: SignedTransaction[] = [];
+    const failedTransactions: number[] = [];
 
-    for (const transaction of transactions) {
+    for (let i = 0; i < transactions.length; i++) {
+      const transaction = transactions[i];
       try {
+        // CRITICAL: Rebuild transaction with fresh blockhash before sending
+        // This ensures each transaction is independent and won't fail due to expired blockhash
+        const freshBlockhash = await connection.getLatestBlockhash('finalized');
+        transaction.recentBlockhash = freshBlockhash.blockhash;
+        transaction.lastValidBlockHeight = freshBlockhash.lastValidBlockHeight;
+        
         // Sign and send transaction
         const signature = await sendAndConfirmTransaction(
           connection,
@@ -160,7 +170,7 @@ export class TransactionBuilder {
           }
         );
 
-        logger.info({ signature }, 'Transaction confirmed');
+        logger.info({ signature, transactionIndex: i + 1 }, 'Transaction confirmed');
 
         // Extract recipient info from transaction
         // This is simplified - in production, parse the transaction instructions
@@ -169,10 +179,34 @@ export class TransactionBuilder {
           recipient: 'extracted_from_transaction',
           amount: BigInt(0), // extracted_from_transaction
         });
+        
+        // Small delay between transactions to avoid rate limiting
+        if (i < transactions.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       } catch (error) {
-        logger.error({ error, transaction }, 'Failed to execute transaction');
-        throw error;
+        logger.error({ 
+          error, 
+          transactionIndex: i + 1,
+          errorMessage: (error as Error).message,
+          errorStack: (error as Error).stack
+        }, 'Failed to execute transaction - continuing with remaining transactions');
+        
+        // CRITICAL: Don't throw - continue processing remaining transactions
+        // Each transaction is independent - failure of one should not stop others
+        failedTransactions.push(i + 1);
       }
+    }
+
+    if (failedTransactions.length > 0) {
+      logger.warn(
+        { 
+          failedCount: failedTransactions.length,
+          failedIndices: failedTransactions,
+          totalTransactions: transactions.length
+        },
+        'Some transactions failed - see logs above for details'
+      );
     }
 
     return results;

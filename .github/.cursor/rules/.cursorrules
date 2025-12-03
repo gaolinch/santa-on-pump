@@ -1,0 +1,297 @@
+# Cursor Rules for Santa Project
+
+## Documentation File Placement
+
+**CRITICAL RULE**: All documentation markdown files (`.md`) MUST be created in the appropriate subfolder within the `docs/` directory. Documentation files should NEVER be created in the root directory or alongside source code.
+
+### Documentation Folder Structure
+
+When creating documentation files, place them in the relevant `docs/` subfolder:
+
+- **Backend/API Documentation** → `docs/backend/`
+  - API endpoints, backend services, database, deployment, Docker, etc.
+  - Examples: `API_ENDPOINTS.md`, `DEPLOYMENT_GUIDE.md`, `DATABASE_SCHEMA.md`
+
+- **Frontend Documentation** → `docs/frontend/`
+  - Frontend components, Next.js, React, UI/UX, Vercel deployment, etc.
+  - Examples: `COMPONENT_GUIDE.md`, `VERCEL_DEPLOYMENT.md`, `TESTING.md`
+
+- **Architecture Documentation** → `docs/architecture/`
+  - System architecture, design decisions, high-level overviews, whitepapers
+  - Examples: `santa-architecture-v1.md`, `santa-whitepaper-v0.2.md`
+
+- **Security Documentation** → `docs/security/`
+  - Security reviews, security fixes, security testing, security summaries
+  - Examples: `SECURITY_REVIEW.md`, `SECURITY_FIXES.md`
+
+- **Integration Documentation** → `docs/integration/`
+  - Integration guides, API integrations, third-party services
+  - Examples: `GIFTS_WEBSITE_INTEGRATION.md`, `INTEGRATION_CHECKLIST.md`
+
+- **Gifts Documentation** → `docs/gifts/`
+  - Gift specifications, gift implementation plans
+  - Examples: `santa-24-gifts-spec.md`, `IMPLEMENTATION_PLAN.md`
+
+- **Merkle Documentation** → `docs/merkle/`
+  - Merkle tree implementation, hash explanations, commit-reveal scheme
+  - Examples: `MERKLE_IMPLEMENTATION.md`, `GIFT_HASHES_EXPLAINED.md`
+
+- **Setup Documentation** → `docs/setup/`
+  - Setup guides, migration guides, monorepo setup, installation
+  - Examples: `QUICK_START.md`, `MIGRATION.md`, `MONOREPO_SETUP.md`
+
+### Rules for Creating Documentation
+
+1. **Always ask**: Before creating a `.md` file, determine which `docs/` subfolder it belongs to
+2. **Never create** documentation files in:
+   - Root directory (`/`)
+   - Source code directories (`apps/`, `packages/`, `src/`)
+   - Public directories (`public/`)
+3. **File naming**: Use descriptive, UPPERCASE names with underscores (e.g., `API_ENDPOINTS.md`, `DEPLOYMENT_GUIDE.md`)
+4. **If unsure**: Ask the user which category the documentation belongs to before creating it
+
+### Examples
+
+✅ **CORRECT**:
+- `docs/backend/API_ENDPOINTS.md`
+- `docs/frontend/COMPONENT_GUIDE.md`
+- `docs/architecture/SYSTEM_OVERVIEW.md`
+
+❌ **INCORRECT**:
+- `API_ENDPOINTS.md` (root directory)
+- `apps/santa-block/API_DOCS.md` (source code directory)
+- `README.md` in root (unless it's the main project README)
+
+### Special Cases
+
+- **Root README.md**: The main project README in the root is allowed
+- **Package README.md**: README files in package directories are allowed
+- **Code comments**: Inline documentation in code files is allowed and encouraged
+
+## Code Style
+
+- Use TypeScript for all new code
+- Follow existing code patterns and conventions
+- Use meaningful variable and function names
+- Add comments for complex logic
+
+## Security
+
+- Never commit secrets, API keys, or sensitive data
+- Use environment variables for configuration
+- Review `.gitignore` before committing new files
+
+## Token and Gift Types
+
+**CRITICAL DEFINITIONS**: Understanding the difference between tokens, airdrops, and daily gifts.
+
+### Token Information
+- **Token Name**: $SANTA
+- **Token Mint**: Configured via `SANTA_TOKEN_MINT` or `PUMP_FUN_TOKEN` environment variable
+- **Decimals**: Typically 9 (configured via `SANTA_DECIMALS` or `PUMP_FUN_DECIMALS`)
+
+### Airdrop Definition
+- **What is an Airdrop**: A transfer of $SANTA tokens from the AIRDROP wallet to destination target wallets
+- **Source Wallet**: `AIRDROP_WALLET` (configured via environment variable)
+- **Transfer Type**: Token transfer (SPL token transfer)
+- **Purpose**: Distribute $SANTA tokens to eligible recipients
+- **Examples**: Hourly airdrops, token bonuses, special token distributions
+
+### Daily Gift Definition
+- **What is a Daily Gift**: A transfer of SOL (not tokens) to eligible recipients
+- **Source of Funds**: Creator fees collected for that specific day (`day_pool.fees_in`)
+- **Transfer Type**: SOL transfer (native Solana transfer)
+- **Limit**: NEVER exceed the daily creator fees collected
+- **Purpose**: Reward holders/buyers with SOL based on daily trading activity
+- **Examples**: Proportional holders gift, top buyers gift, deterministic random gift
+
+### Key Differences
+
+| Aspect | Airdrop | Daily Gift |
+|--------|---------|------------|
+| **Asset Type** | $SANTA tokens | SOL (native) |
+| **Source Wallet** | AIRDROP_WALLET | Treasury wallet (for sending) |
+| **Source of Funds** | Token balance in airdrop wallet | Creator fees from `day_pool.fees_in` |
+| **Transfer Method** | SPL token transfer | Native SOL transfer |
+| **Limit** | Token balance in airdrop wallet | Daily creator fees (capped) |
+
+### Implementation Guidelines
+
+1. **When implementing airdrops**:
+   ```typescript
+   // Use token transfer service
+   const tokenTransfer = new TokenTransferService();
+   await tokenTransfer.transferTokens(
+     recipients, // Array of wallet addresses
+     amount, // Token amount (in base units)
+     airdropWallet // AIRDROP_WALLET address
+   );
+   ```
+
+2. **When implementing daily gifts**:
+   ```typescript
+   // Use SOL transfer (transaction builder)
+   const bundle = await transactionBuilder.buildTransferBundle(winners);
+   // Winners contain SOL amounts, not token amounts
+   // Source is treasury wallet, funded by creator fees
+   ```
+
+3. **Never confuse the two**:
+   - ❌ **WRONG**: Sending tokens as daily gift
+   - ❌ **WRONG**: Sending SOL as airdrop
+   - ❌ **WRONG**: Using treasury balance for daily gifts (use creator fees)
+   - ✅ **CORRECT**: Airdrops = token transfers from airdrop wallet
+   - ✅ **CORRECT**: Daily gifts = SOL transfers from treasury, limited by creator fees
+
+## Daily Gift Allocation - Creator Fee Limit
+
+**CRITICAL FINANCIAL RULE**: The daily gift allocation is ALWAYS defined by the creator fees collected for that day. **NEVER send more than the creator fees collected.**
+
+### Key Principles
+
+1. **Source of Funds**: Daily gift distributions come ONLY from creator fees collected that day
+   - Use `day_pool.fees_in` as the source (this is the sum of all creator fees for the day)
+   - This is already capped at the daily limit (e.g., $5000 USD equivalent in SOL)
+
+2. **Never Exceed Creator Fees**:
+   - ❌ **NEVER** distribute more than `day_pool.fees_in`
+   - ❌ **NEVER** use treasury wallet balance for daily gifts
+   - ❌ **NEVER** use any other source of funds
+   - ✅ **ALWAYS** use `day_pool.fees_in` as the maximum distribution amount
+
+3. **Allocation Percentage**:
+   - Gift specifications define an `allocation_percent` (e.g., 100%, 40%, etc.)
+   - Calculate distribution pool: `(day_pool.fees_in * allocation_percent) / 100`
+   - This is the MAXIMUM that can be distributed, never exceed it
+
+4. **Implementation Pattern**:
+   ```typescript
+   // CORRECT: Use day pool creator fees
+   const dayPool = await dayPoolRepo.findByDay(targetDay);
+   const dayCreatorFees = BigInt(dayPool.fees_in); // This is the MAXIMUM
+   
+   // Apply allocation percentage
+   const distributionPool = (dayCreatorFees * BigInt(allocationPercent)) / BigInt(100);
+   
+   // Distribute to winners (total must never exceed distributionPool)
+   const totalDistributed = winners.reduce((sum, w) => sum + w.amount, BigInt(0));
+   
+   // CRITICAL CHECK: Verify we never exceed the limit
+   if (totalDistributed > distributionPool) {
+     throw new Error(`Distribution exceeds creator fees! ${totalDistributed} > ${distributionPool}`);
+   }
+   ```
+
+5. **Where This Applies**:
+   - All gift execution functions
+   - All gift handlers (proportional_holders, top_buyers, etc.)
+   - Daily gift scheduler
+   - Any script that distributes gifts
+
+### Common Mistakes to Avoid
+
+❌ **WRONG**: Using `treasuryBalance` from Solana wallet balance
+❌ **WRONG**: Using a fixed amount regardless of creator fees
+❌ **WRONG**: Distributing more than `day_pool.fees_in`
+❌ **WRONG**: Not applying the allocation percentage correctly
+❌ **WRONG**: Using previous day's fees or cumulative fees
+
+✅ **CORRECT**: Always use `day_pool.fees_in` for the day
+✅ **CORRECT**: Apply allocation percentage: `(fees_in * allocation_percent) / 100`
+✅ **CORRECT**: Verify total distribution never exceeds the calculated pool
+✅ **CORRECT**: Use creator fees from the specific day being processed
+
+### Example: Day 2 Gift Execution
+
+```typescript
+// Get day pool (contains creator fees for the day)
+const dayPool = await dayPoolRepo.findByDay(targetDay);
+const dayCreatorFeesRaw = BigInt(dayPool.fees_in); // e.g., 12731715 lamports
+
+// Apply daily fee limit cap (if configured)
+const dailyFeeLimitLamports = await priceService.convertUSDToSOL(dailyFeeLimitUSD);
+const dayCreatorFees = dayCreatorFeesRaw > dailyFeeLimitLamports 
+  ? dailyFeeLimitLamports 
+  : dayCreatorFeesRaw;
+
+// Apply gift allocation percentage
+const allocationPercent = giftSpec.params.allocation_percent; // e.g., 100
+const distributionPool = (dayCreatorFees * BigInt(allocationPercent)) / BigInt(100);
+
+// Execute gift (must distribute <= distributionPool)
+const result = await giftEngine.executeGift(
+  giftSpec,
+  transactions,
+  holders,
+  dayCreatorFees, // Pass creator fees, NOT treasury balance
+  blockhash
+);
+
+// Verify we didn't exceed the limit
+if (result.totalDistributed > distributionPool) {
+  throw new Error(`Gift distribution exceeded creator fees!`);
+}
+```
+
+## Transaction Buyer/Seller Wallet Identification
+
+**CRITICAL RULE**: When identifying buyer/holder wallets from transactions, use the following logic:
+
+### For BUY Transactions
+- **Buyer/Holder Address**: `to_wallet` field
+- **Rationale**: In a buy transaction, tokens are transferred TO the buyer, so `to_wallet` is where the tokens are received (the buyer/holder address)
+
+### For SELL Transactions
+- **Buyer/Holder Address**: `from_wallet` field
+- **Rationale**: In a sell transaction, tokens are transferred FROM the seller, so `from_wallet` is where the tokens originate (the seller/holder address)
+
+### Implementation Guidelines
+
+1. **When aggregating buy volume by wallet**:
+   - Use `tx.to_wallet` for `kind === 'buy'` transactions
+   - Use `tx.from_wallet` for `kind === 'sell'` transactions (if needed for historical tracking)
+
+2. **When identifying top buyers**:
+   - Filter transactions where `kind === 'buy'`
+   - Aggregate by `to_wallet` (the buyer address)
+
+3. **When creating holder snapshots**:
+   - For buy transactions: `to_wallet` is the holder
+   - For sell transactions: `from_wallet` is the holder (before the sell)
+
+4. **Always exclude treasury wallet**:
+   - The treasury wallet (`SANTA_TREASURY_WALLET`) should NEVER be counted as a buyer
+   - Ensure treasury wallet is in `excludedWallets` configuration
+   - Filter out treasury wallet when aggregating buyer data
+
+### Example Code Pattern
+
+```typescript
+// Correct: Identifying buyers from buy transactions
+const buyTxs = transactions.filter(tx => tx.kind === 'buy');
+const walletVolumes = new Map<string, bigint>();
+
+for (const tx of buyTxs) {
+  // Use to_wallet for buy transactions (the buyer)
+  const buyerWallet = tx.to_wallet;
+  
+  // Exclude treasury and other excluded wallets
+  if (isWalletExcluded(buyerWallet)) {
+    continue;
+  }
+  
+  const current = walletVolumes.get(buyerWallet) || BigInt(0);
+  walletVolumes.set(buyerWallet, current + tx.amount);
+}
+```
+
+### Common Mistakes to Avoid
+
+❌ **WRONG**: Using `from_wallet` for buy transactions
+❌ **WRONG**: Counting treasury wallet as a buyer
+❌ **WRONG**: Not filtering excluded wallets before aggregation
+
+✅ **CORRECT**: Using `to_wallet` for buy transactions
+✅ **CORRECT**: Always excluding treasury wallet and other excluded wallets
+✅ **CORRECT**: Using `from_wallet` only for sell transactions when tracking historical holders
+

@@ -81,18 +81,22 @@ export const config = {
     devWallet: process.env.DEV_WALLET || '',
     airdropWallet: process.env.AIRDROP_WALLET || '',
     // Excluded wallets (comma-separated) - these wallets will never receive gifts or airdrops
-    // Automatically includes DEV_WALLET and AIRDROP_WALLET if configured
+    // Automatically includes DEV_WALLET, AIRDROP_WALLET, and TREASURY_WALLET if configured
     excludedWallets: (() => {
       const excluded = (process.env.EXCLUDED_WALLETS || '').split(',').filter(w => w.trim().length > 0).map(w => w.trim());
       const devWallet = process.env.DEV_WALLET?.trim();
       const airdropWallet = process.env.AIRDROP_WALLET?.trim();
+      const treasuryWallet = process.env.SANTA_TREASURY_WALLET?.trim();
       
-      // Automatically add DEV_WALLET and AIRDROP_WALLET if they're configured
+      // Automatically add DEV_WALLET, AIRDROP_WALLET, and TREASURY_WALLET if they're configured
       if (devWallet && !excluded.includes(devWallet)) {
         excluded.push(devWallet);
       }
       if (airdropWallet && !excluded.includes(airdropWallet)) {
         excluded.push(airdropWallet);
+      }
+      if (treasuryWallet && !excluded.includes(treasuryWallet)) {
+        excluded.push(treasuryWallet);
       }
       
       return excluded;

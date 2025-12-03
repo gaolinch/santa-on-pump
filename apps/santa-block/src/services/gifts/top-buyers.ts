@@ -77,12 +77,25 @@ export class TopBuyersGift implements IGiftHandler {
     
     const walletVolumes = new Map<string, bigint>();
     for (const tx of buyTxs) {
-      // Exclude blacklisted wallets
-      if (isWalletExcluded(tx.from_wallet)) {
+      // For BUY transactions, use to_wallet (the buyer receives tokens)
+      // CRITICAL: According to .cursorrules, for BUY transactions, to_wallet is the buyer/holder address
+      const buyerWallet = tx.to_wallet;
+      
+      // Skip if no to_wallet (shouldn't happen for buy transactions, but safety check)
+      if (!buyerWallet) {
+        logger.warn({ day: spec.day, signature: tx.signature }, 'Buy transaction missing to_wallet');
         continue;
       }
-      const current = walletVolumes.get(tx.from_wallet) || BigInt(0);
-      walletVolumes.set(tx.from_wallet, current + tx.amount);
+      
+      // Exclude blacklisted wallets (including treasury wallet)
+      if (isWalletExcluded(buyerWallet)) {
+        continue;
+      }
+      
+      const current = walletVolumes.get(buyerWallet) || BigInt(0);
+      // Ensure amount is BigInt (PostgreSQL may return as string)
+      const amount = typeof tx.amount === 'string' ? BigInt(tx.amount) : typeof tx.amount === 'bigint' ? tx.amount : BigInt(String(tx.amount));
+      walletVolumes.set(buyerWallet, current + amount);
     }
 
     logger.info({ 
