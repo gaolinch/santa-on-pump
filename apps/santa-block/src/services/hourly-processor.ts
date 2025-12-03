@@ -377,19 +377,19 @@ export class HourlyProcessor {
               const parsedData = mintInfo.value.data as any;
               if (parsedData.parsed?.info?.decimals !== undefined) {
                 tokenDecimals = parsedData.parsed.info.decimals;
-                hourlyLogger.info({
+                hourlyLogger.info('Detected token decimals from blockchain', {
                   decimals: tokenDecimals,
                   source: 'blockchain',
-                }, 'Detected token decimals from blockchain');
+                });
               }
             }
           }
         } catch (error: any) {
-          hourlyLogger.warn({
+          hourlyLogger.warn('Could not fetch decimals from blockchain, using config value', {
             error: error.message,
             decimals: tokenDecimals,
             source: 'config',
-          }, 'Could not fetch decimals from blockchain, using config value');
+          });
         }
 
         // Convert token amounts to base units using actual token decimals
@@ -398,11 +398,11 @@ export class HourlyProcessor {
           amount: Math.floor(r.amount * (10 ** tokenDecimals)), // Convert to base units
         }));
         
-        hourlyLogger.info({
+        hourlyLogger.info('Converted token amounts to base units', {
           tokenDecimals,
           exampleAmount: manualRecipients[0]?.amount,
           exampleBaseUnits: recipients[0]?.amount,
-        }, 'Converted token amounts to base units');
+        });
       } else {
         // Normal flow: check config and select winners
         // 1. Check if this day has hourly airdrops

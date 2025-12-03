@@ -60,8 +60,8 @@ async function testHourlyDryRun(options: TestOptions = {}) {
       console.log(`Already Distributed: ${result.alreadyDistributed}`);
     } else {
       console.log(`\n--- Winner Selection ---`);
-      console.log(`Winner: ${result.winner}`);
-      console.log(`Amount: ${result.amount.toLocaleString()} SANTA tokens`);
+      console.log(`Winner: ${result.winner || 'N/A'}`);
+      console.log(`Amount: ${result.amount?.toLocaleString() || '0'} SANTA tokens`);
       console.log(`Eligible Participants: ${result.eligibleCount}`);
       console.log(`Blockhash: ${result.blockhash.substring(0, 20)}...`);
     }
@@ -108,7 +108,7 @@ async function testMultipleHours(day: number, startHour: number = 0, endHour: nu
       if (result.wouldSkip) {
         console.log(`⏭️  Would skip: ${result.skipReason}`);
       } else {
-        console.log(`✅ Winner: ${result.winner.substring(0, 20)}... (${result.amount} tokens)`);
+        console.log(`✅ Winner: ${result.winner?.substring(0, 20) || 'N/A'}... (${result.amount || 0} tokens)`);
       }
     } else {
       console.log(`❌ No result (not in season)`);

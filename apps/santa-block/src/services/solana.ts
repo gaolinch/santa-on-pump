@@ -715,54 +715,73 @@ export class SolanaService {
           // For a SELL: User tokens decrease, Pool tokens increase
           // For a BUY: Pool tokens decrease, User tokens increase
           
-          // Check WSOL to confirm direction
-          const poolWsolDecrease = wsolChanges.find(w => !w.isIncrease && w.owner === increase.owner);
-          const userWsolIncrease = wsolChanges.find(w => w.isIncrease);
-          
+          // PRIORITY 1: Check pool account directly (most reliable)
+          // If pool received tokens = SELL, if pool sent tokens = BUY
           let kind: 'buy' | 'sell' | 'transfer';
           let from: string;
           let to: string;
           
-          // If pool's WSOL decreased (they sent SOL out), user is SELLING tokens for SOL
-          if (poolWsolDecrease) {
-            kind = 'sell';
+          if (config.solana.poolTokenAccount && decrease.owner === config.solana.poolTokenAccount) {
+            // Pool tokens decreased = tokens went OUT = BUY
+            kind = 'buy';
             from = decrease.owner;
             to = increase.owner;
-            logger.info({ signature, from, to, poolWsolOwner: poolWsolDecrease.owner }, 'Detected SELL (pool sent SOL out, received tokens)');
+            logger.info({ signature, from, to, poolAccount: config.solana.poolTokenAccount }, 'Detected BUY (pool sent tokens)');
           }
-          // If user received WSOL AND their tokens decreased, they SOLD
-          else if (userWsolIncrease && userWsolIncrease.owner !== increase.owner) {
-            kind = 'sell';
-            from = decrease.owner;
-            to = increase.owner;
-            logger.info({ signature, from, to }, 'Detected SELL (user tokens out, SOL in)');
-          }
-          // Check if the account that INCREASED tokens is the pool (if configured)
-          // If pool received tokens = SELL, if pool sent tokens = BUY
           else if (config.solana.poolTokenAccount && increase.owner === config.solana.poolTokenAccount) {
+            // Pool tokens increased = tokens came IN = SELL
             kind = 'sell';
             from = decrease.owner;
             to = increase.owner;
-            logger.info({ signature, from, to, poolAccount: config.solana.poolTokenAccount }, 'Detected SELL (pool received tokens, no WSOL data)');
+            logger.info({ signature, from, to, poolAccount: config.solana.poolTokenAccount }, 'Detected SELL (pool received tokens)');
           }
-          else if (config.solana.poolTokenAccount && decrease.owner === config.solana.poolTokenAccount) {
-            kind = 'buy';
-            from = decrease.owner;
-            to = increase.owner;
-            logger.info({ signature, from, to, poolAccount: config.solana.poolTokenAccount }, 'Detected BUY (pool sent tokens, no WSOL data)');
-          }
-          // If tokens increased for an account = BUY (they bought tokens)
-          else if (increase && decrease) {
-            kind = 'buy';
-            from = decrease.owner;
-            to = increase.owner;
-            logger.info({ signature, from, to }, 'Detected BUY (user received tokens) - fallback');
-          }
-          // Fallback
+          // PRIORITY 2: Check WSOL to confirm direction (if pool account not configured or doesn't match)
           else {
-            // If we don't have both increase and decrease, skip this transaction
-            logger.warn({ signature }, 'Cannot determine transfer direction - missing increase or decrease');
-            return null;
+            // Find pool's WSOL change (if pool account is configured)
+            const poolWsolChange = config.solana.poolTokenAccount 
+              ? wsolChanges.find(w => w.owner === config.solana.poolTokenAccount)
+              : null;
+            
+            // Find user's WSOL change (the account that increased tokens, if not pool)
+            const userWsolChange = increase.owner !== config.solana.poolTokenAccount
+              ? wsolChanges.find(w => w.owner === increase.owner)
+              : null;
+            
+            // If pool's WSOL increased (pool received SOL), user is BUYING tokens
+            if (poolWsolChange && poolWsolChange.isIncrease) {
+              kind = 'buy';
+              from = decrease.owner;
+              to = increase.owner;
+              logger.info({ signature, from, to, poolWsolOwner: poolWsolChange.owner }, 'Detected BUY (pool received SOL, sent tokens)');
+            }
+            // If pool's WSOL decreased (pool sent SOL), user is SELLING tokens
+            else if (poolWsolChange && !poolWsolChange.isIncrease) {
+              kind = 'sell';
+              from = decrease.owner;
+              to = increase.owner;
+              logger.info({ signature, from, to, poolWsolOwner: poolWsolChange.owner }, 'Detected SELL (pool sent SOL, received tokens)');
+            }
+            // If user's WSOL decreased (user sent SOL), user is BUYING tokens
+            else if (userWsolChange && !userWsolChange.isIncrease) {
+              kind = 'buy';
+              from = decrease.owner;
+              to = increase.owner;
+              logger.info({ signature, from, to, userWsolOwner: userWsolChange.owner }, 'Detected BUY (user sent SOL, received tokens)');
+            }
+            // If user's WSOL increased (user received SOL), user is SELLING tokens
+            else if (userWsolChange && userWsolChange.isIncrease) {
+              kind = 'sell';
+              from = decrease.owner;
+              to = increase.owner;
+              logger.info({ signature, from, to, userWsolOwner: userWsolChange.owner }, 'Detected SELL (user received SOL, sent tokens)');
+            }
+            // Fallback: If tokens increased for an account = BUY (they bought tokens)
+            else {
+              kind = 'buy';
+              from = decrease.owner;
+              to = increase.owner;
+              logger.info({ signature, from, to }, 'Detected BUY (user received tokens) - fallback');
+            }
           }
           
           logger.info({

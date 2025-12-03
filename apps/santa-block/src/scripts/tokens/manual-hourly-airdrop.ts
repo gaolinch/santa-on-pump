@@ -54,7 +54,7 @@ async function manualHourlyAirdrop() {
     console.log(`   Day: ${result.day}`);
     console.log(`   Hour: ${result.hour}`);
     console.log(`   Winner: ${result.winner}`);
-    console.log(`   Amount: ${result.amount.toLocaleString()} tokens`);
+    console.log(`   Amount: ${result.amount?.toLocaleString() || '0'} tokens`);
     console.log(`   Blockhash: ${result.blockhash}`);
     console.log(`   Timestamp: ${result.timestamp.toISOString()}`);
     
