@@ -22,7 +22,7 @@ export default function VerifyCardsPage() {
         </p>
 
         <div className="mb-8 bg-festive-green-50 dark:bg-festive-green-900/20 rounded-lg p-6 border-2 border-festive-green-500 dark:border-festive-green-700">
-          <h2 className="text-2xl font-bold mb-3 text-festive-green-800 dark:text-festive-green-200">
+          <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
             🎄 Merkle Root Commitment
           </h2>
           <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">

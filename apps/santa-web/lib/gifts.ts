@@ -1,5 +1,6 @@
 // Utility functions for loading and processing gifts data
 import commitmentData from './commitment-hash.json'
+import ngoDataFile from '../data/ngos.json'
 
 export type GiftType = 
   | 'proportional_holders'
@@ -43,12 +44,24 @@ export type DayReveal = {
 export type NGO = {
   name: string
   website: string
+  donation_website?: string
   twitter: string | null
   eth_address: string | null
   sol_address: string | null
   ens_name: string | null
   logo_image: string | null
+  tax_id?: string
+  mission?: string
   notes: string
+  impact?: {
+    lives_touched?: string
+    research_invested?: string
+    survivors?: string
+    screenings?: string
+    rides_to_treatment?: string
+    free_lodging_nights?: string
+  }
+  programs?: string[]
 }
 
 // Type-safe static data
@@ -190,21 +203,110 @@ export function getGiftDescription(gift: Gift): string {
   }
 }
 
+// Load NGOs from JSON file
+function loadNGOData() {
+  return ngoDataFile as { ngos: Array<{
+    id: string
+    day: number
+    name: string
+    website: string
+    donation_website?: string
+    twitter: string | null
+    sol_address: string | null
+    eth_address: string | null
+    logo_image: string | null
+    tax_id?: string
+    mission?: string
+    notes: string
+    impact?: {
+      lives_touched?: string
+      research_invested?: string
+      survivors?: string
+      screenings?: string
+      rides_to_treatment?: string
+      free_lodging_nights?: string
+    }
+    programs?: string[]
+  }> }
+}
+
+// Get NGO by day number
+export function getNGOByDay(day: number): NGO | null {
+  const data = loadNGOData()
+  const ngo = data.ngos.find(n => n.day === day)
+  
+  if (!ngo) return null
+  
+  return {
+    name: ngo.name,
+    website: ngo.website,
+    donation_website: ngo.donation_website,
+    twitter: ngo.twitter ? `https://x.com/${ngo.twitter.replace('@', '')}` : null,
+    sol_address: ngo.sol_address,
+    eth_address: ngo.eth_address,
+    ens_name: null,
+    logo_image: ngo.logo_image,
+    tax_id: ngo.tax_id,
+    mission: ngo.mission,
+    notes: ngo.notes,
+    impact: ngo.impact,
+    programs: ngo.programs
+  }
+}
+
+// Get NGO by wallet address (fallback)
+export function getNGOByWallet(wallet: string): NGO | null {
+  const data = loadNGOData()
+  const ngo = data.ngos.find(n => n.sol_address === wallet || n.eth_address === wallet)
+  
+  if (!ngo) return null
+  
+  return {
+    name: ngo.name,
+    website: ngo.website,
+    donation_website: ngo.donation_website,
+    twitter: ngo.twitter ? `https://x.com/${ngo.twitter.replace('@', '')}` : null,
+    sol_address: ngo.sol_address,
+    eth_address: ngo.eth_address,
+    ens_name: null,
+    logo_image: ngo.logo_image,
+    tax_id: ngo.tax_id,
+    mission: ngo.mission,
+    notes: ngo.notes,
+    impact: ngo.impact,
+    programs: ngo.programs
+  }
+}
+
 // Get NGO info if the gift is an NGO donation
-export function getNGOInfo(gift: Gift): NGO | null {
-  if (gift.type === 'full_donation_to_ngo' && gift.params?.ngo_name) {
-    const ngoName = gift.params.ngo_name as string
+export function getNGOInfo(gift: Gift, day?: number): NGO | null {
+  if (gift.type === 'ngo_donation' || gift.type === 'full_donation_to_ngo') {
+    // First try to get NGO by day number (works in hint mode)
+    if (day) {
+      const ngo = getNGOByDay(day)
+      if (ngo) return ngo
+    }
     
-    // Return basic info from gift params
-    return {
-      name: ngoName,
-      website: gift.params.ngo_website as string || '',
-      sol_address: gift.params.ngo_wallet as string || '',
-      twitter: null,
-      eth_address: null,
-      ens_name: null,
-      logo_image: null,
-      notes: gift.notes || ''
+    // Fallback: Try to get NGO by wallet address from params
+    const wallet = gift.params?.ngo_wallet as string
+    if (wallet) {
+      const ngo = getNGOByWallet(wallet)
+      if (ngo) return ngo
+    }
+    
+    // Fallback to params if available
+    if (gift.params?.ngo_name) {
+      const ngoName = gift.params.ngo_name as string
+      return {
+        name: ngoName,
+        website: gift.params.ngo_website as string || '',
+        sol_address: gift.params.ngo_wallet as string || '',
+        twitter: gift.params.ngo_twitter ? `https://x.com/${gift.params.ngo_twitter.replace('@', '')}` : null,
+        eth_address: null,
+        ens_name: null,
+        logo_image: null,
+        notes: gift.notes || ''
+      }
     }
   }
   return null

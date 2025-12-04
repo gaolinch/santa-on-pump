@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
+import ThemeSwitcher from './ThemeSwitcher'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -58,14 +59,17 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
+            <ThemeSwitcher />
           </div>
 
-          {/* Mobile Burger Menu Button */}
-          <button
-            onClick={toggleMenu}
-            className="lg:hidden flex flex-col justify-center items-center w-10 h-10 space-y-1.5 focus:outline-none"
-            aria-label="Toggle menu"
-          >
+          {/* Mobile Menu - Theme Switcher and Burger */}
+          <div className="lg:hidden flex items-center space-x-2">
+            <ThemeSwitcher />
+            <button
+              onClick={toggleMenu}
+              className="flex flex-col justify-center items-center w-10 h-10 space-y-1.5 focus:outline-none"
+              aria-label="Toggle menu"
+            >
             <span
               className={`block w-6 h-0.5 bg-gray-700 dark:bg-gray-300 transition-all duration-300 ${
                 isMenuOpen ? 'rotate-45 translate-y-2' : ''
@@ -82,6 +86,7 @@ export default function Header() {
               }`}
             ></span>
           </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}

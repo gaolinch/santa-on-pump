@@ -196,7 +196,7 @@ export class TwitterService {
     const solAmount = parseFloat(totalDistributedSOL).toFixed(4).replace(/\.?0+$/, '');
     
     // Build message with emojis and formatting
-    let message = `🦌🦌🦌 Gift dropped - Day ${day} - Bang 🦌🦌🦌\n\n`;
+    let message = `🦌🎄🦌 Oh oh oh another gift dropped 🦌🎄🦌\n\n`;
     message += `✨ ${giftTypeName}\n`;
     message += `🎉 ${winnerCount} ${winnerCount === 1 ? 'holder' : 'holders'} rewarded\n`;
     message += `💰 ${solAmount} SOL distributed\n\n`;

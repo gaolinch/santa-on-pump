@@ -19,6 +19,7 @@
     overflow-x: hidden;
   }
 
+  /* Festive Theme Background (default) */
   body::before {
     content: '';
     position: fixed;
@@ -29,7 +30,7 @@
     z-index: 0;
     pointer-events: none;
     background-image: 
-      /* Snow glows */
+      /* Snow glows - green */
       radial-gradient(circle at 10% 20%, rgba(34, 197, 94, 0.12) 0%, transparent 50%),
       radial-gradient(circle at 90% 10%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
       radial-gradient(circle at 50% 90%, rgba(34, 197, 94, 0.11) 0%, transparent 50%),
@@ -41,6 +42,13 @@
       radial-gradient(circle at 60% 15%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
       radial-gradient(circle at 15% 45%, rgba(34, 197, 94, 0.09) 0%, transparent 50%);
     opacity: 0.5;
+  }
+
+  /* Charity Theme Background - white */
+  body.theme-charity::before {
+    background: white;
+    background-image: none;
+    opacity: 1;
   }
 }
 
@@ -125,7 +133,7 @@
   z-index: 1;
 }
 
-/* Particles - snow effect */
+/* Particles - Festive Theme (default - green) */
 .particle {
   position: absolute;
   bottom: -20px;
@@ -149,6 +157,17 @@
 .particle:nth-child(3n) {
   background: rgba(255, 255, 255, 0.6);
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+/* Particles - Charity Theme (red) */
+body.theme-charity .particle {
+  background: rgba(220, 38, 38, 0.7);
+  box-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+}
+
+body.theme-charity .particle:nth-child(3n) {
+  background: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
 }
 
 @keyframes particle-float {
@@ -490,5 +509,501 @@ main {
 
 .countdown-flip-back {
   transform: rotateY(180deg);
+}
+
+/* Charity Theme - Comprehensive color scheme fixes */
+
+/* Hero section text */
+body.theme-charity .hero-subtitle {
+  color: rgb(31 41 55) !important; /* gray-800 */
+}
+
+body.theme-charity.dark .hero-subtitle {
+  color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+body.theme-charity .hero-description {
+  color: rgb(55 65 81) !important; /* gray-700 */
+}
+
+body.theme-charity.dark .hero-description {
+  color: rgb(209 213 219) !important; /* gray-300 */
+}
+
+/* Header - Fix white text on white background */
+body.theme-charity header .text-white {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+body.theme-charity.dark header .text-white {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* Header navigation links */
+body.theme-charity header .text-gray-700 {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+body.theme-charity header .text-gray-300 {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+body.theme-charity.dark header .text-gray-300 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* Header borders - make more visible */
+body.theme-charity header {
+  border-color: rgb(229 231 235) !important; /* gray-200 */
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+body.theme-charity.dark header {
+  border-color: rgb(55 65 81) !important; /* gray-700 */
+  background: rgba(17, 24, 39, 0.95) !important; /* gray-900 */
+}
+
+/* Make all text darker in charity theme - override Tailwind classes */
+body.theme-charity .text-gray-500 {
+  color: rgb(55 65 81) !important; /* gray-700 */
+}
+
+body.theme-charity .text-gray-400 {
+  color: rgb(75 85 99) !important; /* gray-600 */
+}
+
+body.theme-charity .text-gray-600 {
+  color: rgb(31 41 55) !important; /* gray-800 */
+}
+
+body.theme-charity .text-gray-300 {
+  color: rgb(31 41 55) !important; /* gray-800 */
+}
+
+/* Dark mode overrides for charity theme */
+body.theme-charity.dark .text-gray-500 {
+  color: rgb(209 213 219) !important; /* gray-300 */
+}
+
+body.theme-charity.dark .text-gray-400 {
+  color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+body.theme-charity.dark .text-gray-600 {
+  color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+body.theme-charity.dark .text-gray-300 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* Cards - Better borders and backgrounds */
+body.theme-charity .bg-white {
+  background-color: rgb(255 255 255) !important;
+  border-color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+body.theme-charity .border-gray-200 {
+  border-color: rgb(209 213 219) !important; /* gray-300 - darker border */
+}
+
+body.theme-charity .border-gray-300 {
+  border-color: rgb(156 163 175) !important; /* gray-400 - even darker */
+}
+
+body.theme-charity.dark .bg-gray-800 {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+}
+
+body.theme-charity.dark .border-gray-700 {
+  border-color: rgb(75 85 99) !important; /* gray-600 - lighter border for dark mode */
+}
+
+/* Card hover states - use red instead of green */
+body.theme-charity .hover\:border-festive-green-500:hover {
+  border-color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity.dark .hover\:border-festive-green-500:hover {
+  border-color: rgb(239 68 68) !important; /* red-500 */
+}
+
+/* Icons in cards - use red instead of green */
+body.theme-charity .text-festive-green-600 {
+  color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity .text-festive-green-400 {
+  color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity.dark .text-festive-green-400 {
+  color: rgb(239 68 68) !important; /* red-500 */
+}
+
+/* Buttons and links */
+body.theme-charity .text-festive-green-600 {
+  color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity .border-festive-green-600 {
+  border-color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity .hover\:bg-festive-green-50:hover {
+  background-color: rgb(254 242 242) !important; /* red-50 */
+}
+
+body.theme-charity.dark .hover\:bg-festive-green-900\/20:hover {
+  background-color: rgba(127, 29, 29, 0.2) !important; /* red-900/20 */
+}
+
+/* Make paragraphs and headings darker in charity theme */
+body.theme-charity p:not([class*="text-"]) {
+  color: rgb(31 41 55); /* gray-800 */
+}
+
+body.theme-charity.dark p:not([class*="text-"]) {
+  color: rgb(229 231 235); /* gray-200 */
+}
+
+body.theme-charity h1:not([class*="text-"]),
+body.theme-charity h2:not([class*="text-"]),
+body.theme-charity h3:not([class*="text-"]),
+body.theme-charity h4:not([class*="text-"]),
+body.theme-charity h5:not([class*="text-"]),
+body.theme-charity h6:not([class*="text-"]) {
+  color: rgb(17 24 39); /* gray-900 */
+}
+
+body.theme-charity.dark h1:not([class*="text-"]),
+body.theme-charity.dark h2:not([class*="text-"]),
+body.theme-charity.dark h3:not([class*="text-"]),
+body.theme-charity.dark h4:not([class*="text-"]),
+body.theme-charity.dark h5:not([class*="text-"]),
+body.theme-charity.dark h6:not([class*="text-"]) {
+  color: rgb(243 244 246); /* gray-100 */
+}
+
+/* Section backgrounds */
+body.theme-charity .bg-gray-50 {
+  background-color: rgb(249 250 251) !important; /* gray-50 */
+}
+
+body.theme-charity.dark .bg-gray-800\/50 {
+  background-color: rgba(31, 41, 55, 0.5) !important; /* gray-800/50 */
+}
+
+/* Countdown and number circles */
+body.theme-charity .border-festive-green-600 {
+  border-color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity .text-festive-green-600 {
+  color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity.dark .border-festive-green-500 {
+  border-color: rgb(239 68 68) !important; /* red-500 */
+}
+
+body.theme-charity.dark .text-festive-green-500 {
+  color: rgb(239 68 68) !important; /* red-500 */
+}
+
+/* Burger menu lines */
+body.theme-charity .bg-gray-700 {
+  background-color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+body.theme-charity.dark .bg-gray-300 {
+  background-color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* Laser and Neon effects - Red for charity theme */
+body.theme-charity .laser-text::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(220, 38, 38, 0.8),
+    rgba(220, 38, 38, 1),
+    rgba(220, 38, 38, 0.8),
+    transparent
+  ) !important;
+  box-shadow: 
+    0 0 10px rgba(220, 38, 38, 0.8),
+    0 0 20px rgba(220, 38, 38, 0.6),
+    0 0 30px rgba(220, 38, 38, 0.4) !important;
+}
+
+body.theme-charity .laser-text::after {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(220, 38, 38, 0.1) 30%,
+    rgba(220, 38, 38, 0.2) 50%,
+    rgba(220, 38, 38, 0.1) 70%,
+    transparent 100%
+  ) !important;
+}
+
+body.theme-charity .neon-text {
+  animation: neon-pulse-red 10s ease-in-out infinite;
+}
+
+@keyframes neon-pulse-red {
+  0% {
+    text-shadow: 
+      0 0 2px rgba(220, 38, 38, 0.3);
+  }
+  2%, 15% {
+    text-shadow: 
+      0 0 10px rgba(220, 38, 38, 0.9),
+      0 0 20px rgba(220, 38, 38, 0.7),
+      0 0 30px rgba(220, 38, 38, 0.5),
+      0 0 40px rgba(220, 38, 38, 0.3);
+  }
+  16%, 30% {
+    text-shadow: 
+      0 0 10px rgba(220, 38, 38, 0.9),
+      0 0 20px rgba(220, 38, 38, 0.7),
+      0 0 30px rgba(220, 38, 38, 0.5),
+      0 0 40px rgba(220, 38, 38, 0.3);
+  }
+  32% {
+    text-shadow: 
+      0 0 2px rgba(220, 38, 38, 0.3);
+  }
+  100% {
+    text-shadow: 
+      0 0 2px rgba(220, 38, 38, 0.3);
+  }
+}
+
+/* DayCard colors - Red for charity theme */
+body.theme-charity .border-festive-green-500 {
+  border-color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity .bg-festive-green-50 {
+  background-color: rgb(254 242 242) !important; /* red-50 */
+}
+
+body.theme-charity .text-festive-green-700 {
+  color: rgb(185 28 28) !important; /* red-700 */
+}
+
+body.theme-charity .text-festive-green-600 {
+  color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity.dark .border-festive-green-400 {
+  border-color: rgb(239 68 68) !important; /* red-500 */
+}
+
+body.theme-charity.dark .bg-festive-green-900\/60 {
+  background-color: rgba(127, 29, 29, 0.6) !important; /* red-900/60 */
+}
+
+body.theme-charity.dark .text-festive-green-300 {
+  color: rgb(239 68 68) !important; /* red-500 */
+}
+
+body.theme-charity.dark .text-festive-green-400 {
+  color: rgb(239 68 68) !important; /* red-500 */
+}
+
+/* VerifyDayCard hover states */
+body.theme-charity .hover\:border-festive-green-500:hover {
+  border-color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity.dark .hover\:border-festive-green-500:hover {
+  border-color: rgb(239 68 68) !important; /* red-500 */
+}
+
+body.theme-charity .ring-festive-green-300 {
+  --tw-ring-color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity.dark .ring-festive-green-700 {
+  --tw-ring-color: rgb(185 28 28) !important; /* red-700 */
+}
+
+/* Gradient backgrounds - change green to red */
+/* Override Tailwind gradient utilities by targeting the background-image directly */
+body.theme-charity [class*="from-festive-green-600"][class*="to-emerald-500"] {
+  background-image: linear-gradient(to right, rgb(220 38 38), rgb(239 68 68)) !important; /* red-600 to red-500 */
+}
+
+body.theme-charity.dark [class*="from-festive-green-500"][class*="to-emerald-400"] {
+  background-image: linear-gradient(to right, rgb(239 68 68), rgb(248 113 113)) !important; /* red-500 to red-400 */
+}
+
+/* Override Tailwind CSS variables for gradients */
+body.theme-charity [class*="from-festive-green-600"] {
+  --tw-gradient-from: rgb(220 38 38) !important; /* red-600 */
+  --tw-gradient-to: rgb(220 38 38 / 0) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to), var(--tw-gradient-to) !important;
+}
+
+body.theme-charity [class*="to-emerald-500"] {
+  --tw-gradient-to: rgb(239 68 68) !important; /* red-500 */
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(239 68 68), var(--tw-gradient-to) !important;
+}
+
+body.theme-charity.dark [class*="from-festive-green-500"] {
+  --tw-gradient-from: rgb(239 68 68) !important; /* red-500 */
+  --tw-gradient-to: rgb(239 68 68 / 0) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to), var(--tw-gradient-to) !important;
+}
+
+body.theme-charity.dark [class*="to-emerald-400"] {
+  --tw-gradient-to: rgb(248 113 113) !important; /* red-400 */
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(248 113 113), var(--tw-gradient-to) !important;
+}
+
+/* Change yellow colors to red in charity theme - for hint/charity day cards */
+body.theme-charity .bg-yellow-50 {
+  background-color: rgb(254 242 242) !important; /* red-50 */
+}
+
+body.theme-charity .border-yellow-500 {
+  border-color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity .border-yellow-300 {
+  border-color: rgb(248 113 113) !important; /* red-400 */
+}
+
+body.theme-charity .text-yellow-800 {
+  color: rgb(185 28 28) !important; /* red-700 */
+}
+
+body.theme-charity .text-yellow-700 {
+  color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity.dark .bg-yellow-900\/20 {
+  background-color: rgba(127, 29, 29, 0.2) !important; /* red-900/20 */
+}
+
+body.theme-charity.dark .border-yellow-700 {
+  border-color: rgb(185 28 28) !important; /* red-700 */
+}
+
+body.theme-charity.dark .text-yellow-200 {
+  color: rgb(239 68 68) !important; /* red-500 */
+}
+
+body.theme-charity.dark .text-yellow-300 {
+  color: rgb(248 113 113) !important; /* red-400 */
+}
+
+/* Border colors for gradient buttons */
+body.theme-charity .border-festive-green-500 {
+  border-color: rgb(220 38 38) !important; /* red-600 */
+}
+
+body.theme-charity.dark .border-festive-green-400 {
+  border-color: rgb(239 68 68) !important; /* red-500 */
+}
+
+/* Page titles - Day page, Terminal page, Whitepaper */
+body.theme-charity h1.text-4xl,
+body.theme-charity h1.text-5xl,
+body.theme-charity h1.text-4xl\:md\:text-5xl {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+body.theme-charity.dark h1.text-4xl,
+body.theme-charity.dark h1.text-5xl,
+body.theme-charity.dark h1.text-4xl\:md\:text-5xl {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* Whitepaper prose titles and content */
+body.theme-charity .prose h1,
+body.theme-charity .prose h2,
+body.theme-charity .prose h3,
+body.theme-charity .prose h4,
+body.theme-charity .prose h5,
+body.theme-charity .prose h6 {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+body.theme-charity.dark .prose h1,
+body.theme-charity.dark .prose h2,
+body.theme-charity.dark .prose h3,
+body.theme-charity.dark .prose h4,
+body.theme-charity.dark .prose h5,
+body.theme-charity.dark .prose h6 {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* Whitepaper prose paragraphs and text */
+body.theme-charity .prose p,
+body.theme-charity .prose li,
+body.theme-charity .prose {
+  color: rgb(31 41 55) !important; /* gray-800 */
+}
+
+body.theme-charity.dark .prose p,
+body.theme-charity.dark .prose li,
+body.theme-charity.dark .prose {
+  color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+/* Whitepaper strong/bold text - make sure it's visible */
+body.theme-charity .prose strong,
+body.theme-charity .prose b,
+body.theme-charity strong,
+body.theme-charity b {
+  color: rgb(17 24 39) !important; /* gray-900 - darker for visibility */
+  font-weight: 700 !important;
+}
+
+body.theme-charity.dark .prose strong,
+body.theme-charity.dark .prose b,
+body.theme-charity.dark strong,
+body.theme-charity.dark b {
+  color: rgb(255 255 255) !important; /* white - maximum contrast */
+  font-weight: 700 !important;
+}
+
+/* All strong tags throughout the site in charity theme */
+body.theme-charity .font-semibold {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+body.theme-charity.dark .font-semibold {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* Terminal page title */
+body.theme-charity .text-gray-900 {
+  color: rgb(17 24 39) !important; /* gray-900 */
+}
+
+body.theme-charity.dark .text-white {
+  color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+/* DayCard - Today status day number - darker for charity theme */
+body.theme-charity .text-festive-red-700 {
+  color: rgb(185 28 28) !important; /* red-700 - darker red */
+}
+
+body.theme-charity.dark .text-festive-red-300 {
+  color: rgb(252 165 165) !important; /* red-300 - lighter for dark mode */
+}
+
+/* DayCard - Today status label */
+body.theme-charity .text-festive-red-600 {
+  color: rgb(220 38 38) !important; /* red-600 - darker red */
+}
+
+body.theme-charity.dark .text-festive-red-400 {
+  color: rgb(248 113 113) !important; /* red-400 - lighter for dark mode */
 }
 

@@ -12,6 +12,7 @@ import { TopBuyersGift } from './top-buyers';
 import { DeterministicRandomGift } from './deterministic-random';
 import { NGODonationGift } from './ngo-donation';
 import { LastSecondHourGift } from './last-second-hour';
+import { MostActiveTraderGift } from './most-active-trader';
 
 // Re-export types
 export * from './base-gift';
@@ -37,6 +38,7 @@ export class GiftEngine {
       ['full_donation_to_ngo', ngoGift],
       ['ngo_donation', ngoGift], // Alias for full_donation_to_ngo
       ['last_second_hour', new LastSecondHourGift()],
+      ['most_active_trader', new MostActiveTraderGift()],
     ]);
   }
 

@@ -3,6 +3,7 @@ import { getProof } from '@/lib/api'
 import { buildDayMetadata } from '@/lib/seo'
 import { formatDate } from '@/lib/format'
 import { getGiftByDay, getGiftTypeName, getGiftDescription, getNGOInfo } from '@/lib/gifts'
+import NGOLogo from '@/components/NGOLogo'
 
 type PageProps = {
   params: Promise<{ dd: string }>
@@ -93,7 +94,7 @@ export default async function DayPage({ params }: PageProps) {
             <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
               Leaf Hash
             </h2>
-            <p className="font-mono text-sm break-all bg-gray-100 dark:bg-gray-900 p-3 rounded text-gray-800 dark:text-gray-200">
+            <p className="font-mono text-sm break-all bg-transparent p-3 rounded text-gray-800 dark:text-gray-200">
               {'X'.repeat(64)}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
@@ -107,13 +108,17 @@ export default async function DayPage({ params }: PageProps) {
 
   // Hint phase - show only the hint (based on API response)
   if (revealData?.hint_only) {
+    // Get NGO info by day number (works in hint mode)
+    const ngoInfoHint = getNGOInfo(giftInfo || { type: 'ngo_donation', day } as any, day)
+    const titleText = revealData.gift?.hint || revealData.hint || `Day ${day}`
+    
     return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
             <div className="text-6xl mb-6">💡</div>
             <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-white">
-              Day {day} — Hint Revealed
+              Day {day} — {titleText}
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
               December {day}, 2025
@@ -126,15 +131,99 @@ export default async function DayPage({ params }: PageProps) {
                 {revealData.hint}
               </h2>
               <p className="text-lg text-yellow-700 dark:text-yellow-300">
-                {revealData.sub_hint || 'Full details will be revealed tomorrow'}
+                {ngoInfoHint 
+                  ? 'Every donation counts. Support cancer research today.' 
+                  : (revealData.sub_hint || 'Full details will be revealed tomorrow')}
               </p>
             </div>
 
-            <div className="mt-6 pt-6 border-t border-yellow-300 dark:border-yellow-700">
-              <p className="text-sm text-center text-yellow-700 dark:text-yellow-300">
-                🔒 Full gift details, execution information, and verification will be available tomorrow at midnight.
-              </p>
-            </div>
+            {/* Show NGO info in hint mode for charity days */}
+            {ngoInfoHint && (
+              <div className="mt-6 pt-6 border-t border-yellow-300 dark:border-yellow-700">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-yellow-400 dark:border-yellow-600">
+                  <div className="flex items-start gap-4 mb-4">
+                    <NGOLogo 
+                      logoImage={ngoInfoHint.logo_image}
+                      name={ngoInfoHint.name}
+                      fallbackClassName="w-16 h-16 rounded-lg bg-red-600 dark:bg-red-700 flex items-center justify-center text-white text-2xl font-bold"
+                    />
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+                        {ngoInfoHint.name}
+                      </h3>
+                      {ngoInfoHint.mission && (
+                        <p className="text-sm text-gray-900 dark:text-gray-100 mb-2 font-medium">
+                          {ngoInfoHint.mission}
+                        </p>
+                      )}
+                      {ngoInfoHint.notes && (
+                        <p className="text-sm text-gray-900 dark:text-gray-100 mb-3">
+                          {ngoInfoHint.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {ngoInfoHint.sol_address && (
+                      <div>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">💝 Donation Wallet (The giving block):</span>
+                        <p className="font-mono text-xs break-all bg-transparent p-2 rounded mt-1 text-gray-900 dark:text-gray-100">
+                          {ngoInfoHint.sol_address}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">🌐 Website:</span>
+                      <a 
+                        href={ngoInfoHint.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {ngoInfoHint.website}
+                      </a>
+                    </div>
+
+                    {ngoInfoHint.donation_website && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">💝 Donation Website:</span>
+                        <a 
+                          href={ngoInfoHint.donation_website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                        >
+                          Donate Now
+                        </a>
+                      </div>
+                    )}
+
+                    {ngoInfoHint.twitter && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">𝕏 Twitter:</span>
+                        <a 
+                          href={ngoInfoHint.twitter}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          {ngoInfoHint.twitter.replace('https://x.com/', '@')}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!ngoInfoHint && (
+              <div className="mt-6 pt-6 border-t border-yellow-300 dark:border-yellow-700">
+                <p className="text-sm text-center text-yellow-700 dark:text-yellow-300">
+                  🔒 Full gift details, execution information, and verification will be available tomorrow at midnight.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -145,12 +234,17 @@ export default async function DayPage({ params }: PageProps) {
   if (!proof) {
     if (revealData && giftInfo) {
       // We have reveal data, show simplified page (but include execution data if available)
+      // Use hint if available, otherwise fall back to gift type name
+      const titleText = revealData.gift?.hint || revealData.hint || getGiftTypeName(giftInfo.type)
+      const ngoInfoNoProof = getNGOInfo(giftInfo, day)
+      const isHintModeNoProof = revealData?.hint_only || false
+      
       return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="max-w-4xl mx-auto">
             <div className="mb-8">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-                Day {day} — {getGiftTypeName(giftInfo.type)}
+                Day {day} — {titleText}
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-400">
                 Gift Type: <span className="font-semibold">{getGiftTypeName(giftInfo.type)}</span>
@@ -158,6 +252,100 @@ export default async function DayPage({ params }: PageProps) {
             </div>
 
             <div className="grid gap-6 mb-8">
+              {ngoInfoNoProof && !isHintModeNoProof && (
+                <div className="bg-festive-green-50 dark:bg-festive-green-900/20 rounded-lg p-6 border-2 border-festive-green-500 dark:border-festive-green-700">
+              <div className="flex items-start gap-4 mb-4">
+                <NGOLogo 
+                  logoImage={ngoInfoNoProof.logo_image}
+                  name={ngoInfoNoProof.name}
+                  fallbackClassName="w-16 h-16 rounded-lg bg-festive-green-600 dark:bg-festive-green-700 flex items-center justify-center text-white text-2xl font-bold"
+                />
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-semibold mb-2 text-festive-green-800 dark:text-festive-green-200">
+                        🎁 {ngoInfoNoProof.name}
+                      </h2>
+                      {ngoInfoNoProof.mission && (
+                        <p className="text-sm text-gray-900 dark:text-gray-100 mb-2 font-medium">
+                          {ngoInfoNoProof.mission}
+                        </p>
+                      )}
+                      {ngoInfoNoProof.notes && (
+                        <p className="text-sm text-gray-900 dark:text-gray-100 mb-3">
+                          {ngoInfoNoProof.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {ngoInfoNoProof.sol_address && (
+                      <div>
+                        <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">💝 Donation Wallet (The giving block):</span>
+                        <p className="font-mono text-xs break-all bg-transparent p-2 rounded mt-1 text-festive-green-900 dark:text-festive-green-100">
+                          {ngoInfoNoProof.sol_address}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">🌐 Website:</span>
+                      <a 
+                        href={ngoInfoNoProof.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-festive-green-600 dark:text-festive-green-400 hover:underline"
+                      >
+                        {ngoInfoNoProof.website}
+                      </a>
+                    </div>
+
+                    {ngoInfoNoProof.donation_website && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">💝 Donation Website:</span>
+                        <a 
+                          href={ngoInfoNoProof.donation_website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-festive-green-600 dark:text-festive-green-400 hover:underline"
+                        >
+                          {ngoInfoNoProof.donation_website}
+                        </a>
+                      </div>
+                    )}
+
+                    {ngoInfoNoProof.twitter && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">𝕏 Twitter:</span>
+                        <a 
+                          href={ngoInfoNoProof.twitter}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-festive-green-600 dark:text-festive-green-400 hover:underline"
+                        >
+                          {ngoInfoNoProof.twitter.replace('https://x.com/', '@')}
+                        </a>
+                      </div>
+                    )}
+
+                    {ngoInfoNoProof.sol_address && (
+                      <div>
+                        <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">💝 Donation Wallet (The giving block):</span>
+                        <p className="font-mono text-xs break-all bg-transparent p-2 rounded mt-1 text-festive-green-900 dark:text-festive-green-100">
+                          {ngoInfoNoProof.sol_address}
+                        </p>
+                      </div>
+                    )}
+
+                    {ngoInfoNoProof.eth_address && (
+                      <div>
+                        <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">Ξ Ethereum Wallet:</span>
+                        <p className="font-mono text-xs break-all bg-transparent p-2 rounded mt-1 text-festive-green-900 dark:text-festive-green-100">
+                          {ngoInfoNoProof.eth_address}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                 <h2 className="text-2xl font-semibold mb-4">Gift Details</h2>
                 <div className="space-y-2">
@@ -167,11 +355,6 @@ export default async function DayPage({ params }: PageProps) {
                   <p>
                     <span className="font-semibold">Description:</span> {getGiftDescription(giftInfo)}
                   </p>
-                  {giftInfo.notes && (
-                    <p>
-                      <span className="font-semibold">Notes:</span> {giftInfo.notes}
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -329,7 +512,7 @@ export default async function DayPage({ params }: PageProps) {
                                 <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
                                   View details
                                 </summary>
-                                <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">
+                                <pre className="mt-2 text-xs bg-transparent p-2 rounded overflow-x-auto">
                                   {JSON.stringify(log.data, null, 2)}
                                 </pre>
                               </details>
@@ -349,7 +532,7 @@ export default async function DayPage({ params }: PageProps) {
 
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                 <h2 className="text-2xl font-semibold mb-4">Leaf Hash</h2>
-                <p className="font-mono text-sm break-all bg-gray-100 dark:bg-gray-900 p-3 rounded">
+                <p className="font-mono text-sm break-all bg-transparent p-3 rounded text-gray-900 dark:text-gray-100">
                   {revealData.leaf}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
@@ -511,7 +694,7 @@ export default async function DayPage({ params }: PageProps) {
                                 <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
                                   View details
                                 </summary>
-                                <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">
+                                <pre className="mt-2 text-xs bg-transparent p-2 rounded overflow-x-auto">
                                   {JSON.stringify(log.data, null, 2)}
                                 </pre>
                               </details>
@@ -573,7 +756,7 @@ export default async function DayPage({ params }: PageProps) {
             <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
               Leaf Hash
             </h2>
-            <p className="font-mono text-sm break-all bg-gray-100 dark:bg-gray-900 p-3 rounded text-gray-800 dark:text-gray-200">
+            <p className="font-mono text-sm break-all bg-transparent p-3 rounded text-gray-800 dark:text-gray-200">
               {'X'.repeat(64)}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
@@ -585,14 +768,20 @@ export default async function DayPage({ params }: PageProps) {
     )
   }
 
-  const ngoInfo = giftInfo ? getNGOInfo(giftInfo) : null
+  const ngoInfo = getNGOInfo(giftInfo || { type: 'ngo_donation', day } as any, day)
+
+  // Use hint if available, otherwise use gift name
+  const titleText = revealData?.gift?.hint || revealData?.hint || proof.gift.name
+
+  // Don't show NGO name in hint mode
+  const isHintMode = revealData?.hint_only || false
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white">
-            Day {day} — {proof.gift.name}
+            Day {day} — {titleText}
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400">
             Gift Type: <span className="font-semibold">{giftInfo ? getGiftTypeName(giftInfo.type) : proof.gift.type}</span>
@@ -600,26 +789,25 @@ export default async function DayPage({ params }: PageProps) {
         </div>
 
         <div className="grid gap-6 mb-8">
-          {ngoInfo && (
+          {ngoInfo && !isHintMode && (
             <div className="bg-festive-green-50 dark:bg-festive-green-900/20 rounded-lg p-6 border-2 border-festive-green-500 dark:border-festive-green-700">
               <div className="flex items-start gap-4 mb-4">
-                {ngoInfo.logo_image ? (
-                  <img 
-                    src={ngoInfo.logo_image} 
-                    alt={`${ngoInfo.name} logo`}
-                    className="w-16 h-16 rounded-lg object-contain bg-white p-2"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-lg bg-festive-green-600 dark:bg-festive-green-700 flex items-center justify-center text-white text-2xl font-bold">
-                    {ngoInfo.name.charAt(0)}
-                  </div>
-                )}
+                <NGOLogo 
+                  logoImage={ngoInfo.logo_image}
+                  name={ngoInfo.name}
+                  fallbackClassName="w-16 h-16 rounded-lg bg-festive-green-600 dark:bg-festive-green-700 flex items-center justify-center text-white text-2xl font-bold"
+                />
                 <div className="flex-1">
                   <h2 className="text-2xl font-semibold mb-2 text-festive-green-800 dark:text-festive-green-200">
                     🎁 {ngoInfo.name}
                   </h2>
+                      {ngoInfo.mission && (
+                        <p className="text-sm text-gray-900 dark:text-gray-100 mb-2 font-medium">
+                          {ngoInfo.mission}
+                        </p>
+                      )}
                   {ngoInfo.notes && (
-                    <p className="text-sm text-festive-green-700 dark:text-festive-green-300 mb-3">
+                    <p className="text-sm text-gray-900 dark:text-gray-100 mb-3">
                       {ngoInfo.notes}
                     </p>
                   )}
@@ -627,6 +815,14 @@ export default async function DayPage({ params }: PageProps) {
               </div>
 
               <div className="space-y-3">
+                {ngoInfo.sol_address && (
+                  <div>
+                    <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">💝 Donation Wallet (The giving block):</span>
+                    <p className="font-mono text-xs break-all bg-transparent p-2 rounded mt-1 text-festive-green-900 dark:text-festive-green-100">
+                      {ngoInfo.sol_address}
+                    </p>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">🌐 Website:</span>
                   <a 
@@ -638,6 +834,20 @@ export default async function DayPage({ params }: PageProps) {
                     {ngoInfo.website}
                   </a>
                 </div>
+
+                {ngoInfo.donation_website && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">💝 Donation Website:</span>
+                    <a 
+                      href={ngoInfo.donation_website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-festive-green-600 dark:text-festive-green-400 hover:underline"
+                    >
+                      {ngoInfo.donation_website}
+                    </a>
+                  </div>
+                )}
 
                 {ngoInfo.twitter && (
                   <div className="flex items-center gap-2">
@@ -655,8 +865,8 @@ export default async function DayPage({ params }: PageProps) {
 
                 {ngoInfo.sol_address && (
                   <div>
-                    <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">◎ Solana Wallet:</span>
-                    <p className="font-mono text-xs break-all bg-white dark:bg-gray-900 p-2 rounded mt-1 text-festive-green-900 dark:text-festive-green-100">
+                    <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">💝 Donation Wallet (The giving block):</span>
+                    <p className="font-mono text-xs break-all bg-transparent p-2 rounded mt-1 text-festive-green-900 dark:text-festive-green-100">
                       {ngoInfo.sol_address}
                     </p>
                   </div>
@@ -665,7 +875,7 @@ export default async function DayPage({ params }: PageProps) {
                 {ngoInfo.eth_address && (
                   <div>
                     <span className="font-semibold text-festive-green-700 dark:text-festive-green-300">Ξ Ethereum Wallet:</span>
-                    <p className="font-mono text-xs break-all bg-white dark:bg-gray-900 p-2 rounded mt-1 text-festive-green-900 dark:text-festive-green-100">
+                    <p className="font-mono text-xs break-all bg-transparent p-2 rounded mt-1 text-festive-green-900 dark:text-festive-green-100">
                       {ngoInfo.eth_address}
                     </p>
                   </div>
@@ -692,12 +902,6 @@ export default async function DayPage({ params }: PageProps) {
                 <span className="font-semibold">Distribution Source:</span>{' '}
                 {proof.gift.distribution_source}
               </p>
-              {proof.gift.notes && !ngoInfo && (
-                <p>
-                  <span className="font-semibold">Notes:</span>{' '}
-                  {proof.gift.notes}
-                </p>
-              )}
             </div>
           </div>
 
@@ -868,7 +1072,7 @@ export default async function DayPage({ params }: PageProps) {
                             <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer">
                               View details
                             </summary>
-                            <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">
+                            <pre className="mt-2 text-xs bg-transparent p-2 rounded overflow-x-auto">
                               {JSON.stringify(log.data, null, 2)}
                             </pre>
                           </details>
@@ -888,7 +1092,7 @@ export default async function DayPage({ params }: PageProps) {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold mb-4">Leaf Hash</h2>
-            <p className="font-mono text-sm break-all bg-gray-100 dark:bg-gray-900 p-3 rounded">
+            <p className="font-mono text-sm break-all bg-transparent p-3 rounded text-gray-900 dark:text-gray-100">
               {proof.leaf}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">

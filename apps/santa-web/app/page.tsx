@@ -85,10 +85,10 @@ export default async function HomePage() {
             Santa
           </h1>
         </div>
-        <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+        <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto hero-subtitle">
           Community-Driven and Social On-Chain Advent Calendar
         </p>
-        <p className="text-lg text-gray-500 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
+        <p className="text-lg text-gray-500 dark:text-gray-400 mb-12 max-w-2xl mx-auto hero-description">
           A Solana advent calendar that transforms trading fees into daily gifts. Each day from December 
           1st to 24th reveals a new surprise—all cryptographically committed in advance and distributed to $SANTA token 
           holders and NGOs.

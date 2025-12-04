@@ -36,11 +36,18 @@ export default function RootLayout({
             __html: `
               document.documentElement.classList.add('dark');
               localStorage.theme = 'dark';
+              // Initialize site theme
+              const savedTheme = localStorage.getItem('site-theme') || 'charity';
+              if (savedTheme === 'charity') {
+                document.body.classList.add('theme-charity');
+              } else {
+                document.body.classList.add('theme-festive');
+              }
             `,
           }}
         />
       </head>
-      <body className={`${inter.className} ${spaceGrotesk.variable}`}>
+      <body className={`${inter.className} ${spaceGrotesk.variable} theme-charity`}>
         <BackgroundIcons />
         <Header />
         <main className="min-h-screen">{children}</main>

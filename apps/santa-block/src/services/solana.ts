@@ -775,12 +775,13 @@ export class SolanaService {
               to = increase.owner;
               logger.info({ signature, from, to, userWsolOwner: userWsolChange.owner }, 'Detected SELL (user received SOL, sent tokens)');
             }
-            // Fallback: If tokens increased for an account = BUY (they bought tokens)
+            // Fallback: If we're in this else block, pool account check didn't match
+            // So neither account is the pool - this is a transfer between users
             else {
-              kind = 'buy';
+              kind = 'transfer';
               from = decrease.owner;
               to = increase.owner;
-              logger.info({ signature, from, to }, 'Detected BUY (user received tokens) - fallback');
+              logger.info({ signature, from, to }, 'Detected TRANSFER (user to user, no pool involved)');
             }
           }
           
