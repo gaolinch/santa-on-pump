@@ -1,6 +1,6 @@
 // Utility functions for loading and processing gifts data
 import commitmentData from './commitment-hash.json'
-import ngoDataFile from '../data/ngos.json'
+import ngoDataFile from './ngos.json'
 
 export type GiftType = 
   | 'proportional_holders'

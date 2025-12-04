@@ -1,0 +1,34 @@
+{
+  "ngos": [
+    {
+      "id": "american-cancer-society",
+      "day": 4,
+      "name": "American Cancer Society",
+      "website": "https://www.cancer.org/",
+      "donation_website": "https://www.cancer.org/involved/donate/more-ways-to-give/donate-cryptocurrency.html",
+      "twitter": "@AmericanCancer",
+      "sol_address": "ABVLQGfbdqcC5GQG8wBgG4DaHQneVrfF1urUAb3Pkcr3",
+      "eth_address": null,
+      "logo_image": "/ngos/acs-logo.svg",
+      "tax_id": "13-1788491",
+      "mission": "Improve the lives of people with cancer and their families through advocacy, research, and patient support, to ensure everyone has an opportunity to prevent, find, treat, and survive cancer.",
+      "notes": "The American Cancer Society is a nationwide, community-based voluntary health organization dedicated to eliminating cancer as a major health problem. We've invested more than $5.6 billion in cancer research since 1946, all to find more – and better – treatments, uncover factors that may cause cancer, and improve cancer patients' quality of life.",
+      "impact": {
+        "lives_touched": "140M+",
+        "research_invested": "$5.6B",
+        "survivors": "18M+",
+        "screenings": "2.8M+",
+        "rides_to_treatment": "950K+",
+        "free_lodging_nights": "540K+"
+      },
+      "programs": [
+        "Free Rides to Treatment",
+        "Free Lodging During Treatment",
+        "24/7 Cancer Helpline",
+        "Cancer Survivors Network",
+        "Patient Navigation Services"
+      ]
+    }
+  ]
+}
+
