@@ -34,20 +34,61 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              document.documentElement.classList.add('dark');
-              localStorage.theme = 'dark';
-              // Initialize site theme
-              const savedTheme = localStorage.getItem('site-theme') || 'charity';
-              if (savedTheme === 'charity') {
-                document.body.classList.add('theme-charity');
-              } else {
-                document.body.classList.add('theme-festive');
-              }
+              (function() {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+                
+                // Theme expiry helper functions (1 hour = 3600000 ms)
+                function getThemeWithExpiry() {
+                  const savedTheme = localStorage.getItem('site-theme');
+                  const expiryTime = localStorage.getItem('site-theme-expiry');
+                  
+                  if (!savedTheme || !expiryTime) {
+                    return 'festive'; // Default
+                  }
+                  
+                  const now = Date.now();
+                  const expiry = parseInt(expiryTime, 10);
+                  
+                  // Check if expired (more than 1 hour has passed)
+                  if (now > expiry) {
+                    // Expired - reset to default
+                    localStorage.removeItem('site-theme');
+                    localStorage.removeItem('site-theme-expiry');
+                    return 'festive';
+                  }
+                  
+                  return savedTheme;
+                }
+                
+                function setThemeWithExpiry(theme) {
+                  const now = Date.now();
+                  const oneHour = 3600000; // 1 hour in milliseconds
+                  const expiryTime = now + oneHour;
+                  
+                  localStorage.setItem('site-theme', theme);
+                  localStorage.setItem('site-theme-expiry', expiryTime.toString());
+                }
+                
+                // Initialize site theme - check expiry and default to festive
+                const targetTheme = getThemeWithExpiry();
+                
+                // Apply theme
+                if (targetTheme === 'charity') {
+                  document.body.classList.add('theme-charity');
+                  document.body.classList.remove('theme-festive');
+                } else {
+                  document.body.classList.add('theme-festive');
+                  document.body.classList.remove('theme-charity');
+                  // Set expiry for default theme
+                  setThemeWithExpiry('festive');
+                }
+              })();
             `,
           }}
         />
       </head>
-      <body className={`${inter.className} ${spaceGrotesk.variable} theme-charity`}>
+      <body className={`${inter.className} ${spaceGrotesk.variable} theme-festive`}>
         <BackgroundIcons />
         <Header />
         <main className="min-h-screen">{children}</main>

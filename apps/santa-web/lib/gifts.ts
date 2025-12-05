@@ -7,7 +7,6 @@ export type GiftType =
   | 'deterministic_random'
   | 'top_buyers_airdrop'
   | 'full_donation_to_ngo'
-  | 'ngo_donation'
   | 'last_second_hour'
 
 export type Gift = {
@@ -171,7 +170,6 @@ export function getGiftTypeName(type: GiftType): string {
     deterministic_random: 'Random Winners',
     top_buyers_airdrop: 'Top Buyers Airdrop',
     full_donation_to_ngo: 'NGO Donation',
-    ngo_donation: 'NGO Donation',
     last_second_hour: 'Last Second Bonus'
   }
   return typeMap[type] || type

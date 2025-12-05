@@ -219,6 +219,29 @@ export class TwitterService {
   }
 
   /**
+   * Generate a message for low volume days (fees below 0.01 SOL)
+   */
+  generateLowVolumeMessage(options: { day: number; pageUrl: string }): string {
+    const { day, pageUrl } = options;
+    
+    let message = `🦌🎄🦌 Day ${day} - Low Volume 🦌🎄🦌\n\n`;
+    message += `Due to low trading volume today, the winner has not been rewarded.\n\n`;
+    message += `We hope to do better tomorrow! 🎁\n\n`;
+    message += `📊 Full details:\n${pageUrl}\n\n`;
+    message += `#SantaOnPump #Solana #OnChainAdvent $SANTA`;
+    
+    // Twitter has a 280 character limit
+    if (message.length > 280) {
+      const urlPart = `\n\n📊 ${pageUrl}\n\n#SantaOnPump #Solana`;
+      const maxMessageLength = 280 - urlPart.length - 20;
+      const truncated = message.substring(0, maxMessageLength);
+      message = truncated + '...' + urlPart;
+    }
+    
+    return message;
+  }
+
+  /**
    * Format gift type name for display
    */
   private formatGiftTypeName(giftType: string): string {

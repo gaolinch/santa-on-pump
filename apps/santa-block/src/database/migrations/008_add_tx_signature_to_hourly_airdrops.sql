@@ -19,3 +19,4 @@ CREATE INDEX IF NOT EXISTS idx_hourly_tx_signature ON gift_hourly_airdrops(tx_si
 COMMENT ON COLUMN gift_hourly_airdrops.tx_signature IS 'Solana transaction signature for the token transfer';
 
 
+

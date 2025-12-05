@@ -69,9 +69,7 @@ export async function getStatsToday(): Promise<StatsToday> {
   const url = getAbsoluteUrl(`${apiUrl}.json`)
   
   try {
-    const res = await fetch(url, { 
-      next: { revalidate: 60 } // Revalidate every 60 seconds
-    })
+    const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) throw new Error('Stats not available')
     return res.json()
   } catch (error) {

@@ -1,11 +1,12 @@
--- Migration: Fix close_day() to return UUID instead of BIGINT
--- Date: 2025-12-03
--- Description: Fix close_day() function to return UUID (matching day_pool.id type) instead of BIGINT
+-- Migration: Update close_day() to include both confirmed and finalized transactions
+-- Date: 2025-12-05
+-- Description: Update close_day() function to count fees from both 'confirmed' and 'finalized' transactions
+--              This ensures we capture fees even if transactions haven't been finalized yet
 
 -- Drop the existing function first
 DROP FUNCTION IF EXISTS close_day(DATE);
 
--- Recreate the close_day function with correct return type (UUID)
+-- Recreate the close_day function to include both confirmed and finalized transactions
 CREATE FUNCTION close_day(target_date DATE)
 RETURNS UUID AS $$
 DECLARE
@@ -15,6 +16,7 @@ DECLARE
     total_holders INTEGER;
 BEGIN
     -- Calculate daily totals using creator_fee (Pump.fun creator fees)
+    -- Include both 'confirmed' and 'finalized' transactions
     -- Filter out invalid values:
     -- - NULL values
     -- - Negative values
@@ -27,12 +29,12 @@ BEGIN
             AND creator_fee <= 1000000000
             AND creator_fee::text !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
         ), 0),
-        COUNT(*) FILTER (WHERE status = 'finalized'),
-        COUNT(DISTINCT from_wallet) FILTER (WHERE status = 'finalized')
+        COUNT(*),
+        COUNT(DISTINCT from_wallet)
     INTO total_fees, total_txs, total_holders
     FROM tx_raw
     WHERE DATE(block_time) = target_date
-    AND status = 'finalized';
+    AND status IN ('confirmed', 'finalized');
 
     -- Insert or update day_pool
     INSERT INTO day_pool (day, fees_in, tx_count, holder_count, status, closed_at)
@@ -59,14 +61,12 @@ VALUES (
   'system',
   'schema_migration',
   jsonb_build_object(
-    'migration', '007_fix_close_day_return_uuid',
+    'migration', '009_update_close_day_include_confirmed',
     'timestamp', NOW(),
-    'description', 'Fixed close_day() function to return UUID instead of BIGINT (matching day_pool.id type)',
+    'description', 'Updated close_day() function to include both confirmed and finalized transactions',
     'critical', true,
-    'reason', 'Fixes type mismatch error when closing day pool'
+    'reason', 'Ensures fees are captured even if transactions are not yet finalized'
   ),
   'database_schema'
 );
-
-
 

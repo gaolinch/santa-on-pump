@@ -358,6 +358,26 @@ export default async function DayPage({ params }: PageProps) {
                 </div>
               </div>
 
+              {/* Low Volume Warning */}
+              {executionData?.day_pool && parseFloat(executionData.day_pool.fees_in_sol || '0') < 0.01 && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-6 border-2 border-yellow-400 dark:border-yellow-600">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">⚠️</span>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold mb-2 text-yellow-800 dark:text-yellow-200">
+                        Low Trading Volume
+                      </h3>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
+                        Due to low trading volume (less than 0.01 SOL in fees), rewards were not distributed for this day.
+                      </p>
+                      <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                        <span className="font-semibold">Fees collected:</span> {parseFloat(executionData.day_pool.fees_in_sol || '0').toFixed(9)} SOL
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Execution Details - Show even without proof */}
               {executionData?.execution && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
@@ -379,10 +399,12 @@ export default async function DayPage({ params }: PageProps) {
                         {executionData.execution.status}
                       </span>
                     </p>
-                    <p>
-                      <span className="font-semibold">Total Distributed:</span>{' '}
-                      {executionData.execution.total_distributed_sol} SOL
-                    </p>
+                    {parseFloat(executionData.execution.total_distributed_sol || '0') > 0 && (
+                      <p>
+                        <span className="font-semibold">Total Distributed:</span>{' '}
+                        {executionData.execution.total_distributed_sol} SOL
+                      </p>
+                    )}
                     {executionData.summary && (
                       <>
                         <p>
@@ -559,6 +581,26 @@ export default async function DayPage({ params }: PageProps) {
             </div>
 
             <div className="grid gap-6 mb-8">
+              {/* Low Volume Warning */}
+              {executionData?.day_pool && parseFloat(executionData.day_pool.fees_in_sol || '0') < 0.01 && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-6 border-2 border-yellow-400 dark:border-yellow-600">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">⚠️</span>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold mb-2 text-yellow-800 dark:text-yellow-200">
+                        Low Trading Volume
+                      </h3>
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
+                        Due to low trading volume (less than 0.01 SOL in fees), rewards were not distributed for this day.
+                      </p>
+                      <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                        <span className="font-semibold">Fees collected:</span> {parseFloat(executionData.day_pool.fees_in_sol || '0').toFixed(9)} SOL
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Execution Details */}
               {executionData?.execution && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
@@ -580,10 +622,12 @@ export default async function DayPage({ params }: PageProps) {
                         {executionData.execution.status}
                       </span>
                     </p>
-                    <p>
-                      <span className="font-semibold">Total Distributed:</span>{' '}
-                      {executionData.execution.total_distributed_sol} SOL
-                    </p>
+                    {parseFloat(executionData.execution.total_distributed_sol || '0') > 0 && (
+                      <p>
+                        <span className="font-semibold">Total Distributed:</span>{' '}
+                        {executionData.execution.total_distributed_sol} SOL
+                      </p>
+                    )}
                     {executionData.summary && (
                       <>
                         <p>
@@ -904,6 +948,26 @@ export default async function DayPage({ params }: PageProps) {
               </p>
             </div>
           </div>
+
+          {/* Low Volume Warning */}
+          {executionData?.day_pool && parseFloat(executionData.day_pool.fees_in_sol || '0') < 0.01 && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-6 border-2 border-yellow-400 dark:border-yellow-600">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">⚠️</span>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2 text-yellow-800 dark:text-yellow-200">
+                    Low Trading Volume
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-2">
+                    Due to low trading volume (less than 0.01 SOL in fees), rewards were not distributed for this day.
+                  </p>
+                  <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                    <span className="font-semibold">Fees collected:</span> {parseFloat(executionData.day_pool.fees_in_sol || '0').toFixed(9)} SOL
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-2xl font-semibold mb-4">Execution Details</h2>
